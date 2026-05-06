@@ -1,4 +1,5 @@
 import type { TournamentState, Match } from '../../state/types';
+import { WinFanfare } from './WinFanfare';
 import './BracketView.css';
 
 interface TeamRowProps {
@@ -82,8 +83,9 @@ function MatchCard({ m, label, isLive, isPending, isFinal, teamName, wildcardTea
 }
 
 export function BracketView({ state }: { state: TournamentState }) {
-  const { round1, semis, final, wildcard } = state.bracket;
+  const { round1, semis, final, wildcard, champion } = state.bracket;
   const teamName = (id: string | null) => state.teams.find(t => t.id === id)?.name ?? (id ?? '—');
+  const championName = champion ? teamName(champion) : null;
 
   const livePath = state.currentMatchPath;
   const isLive = (round: string, idx: number) => livePath?.round === round && livePath?.index === idx;
@@ -96,6 +98,7 @@ export function BracketView({ state }: { state: TournamentState }) {
 
   return (
     <div className="brk-stage">
+      <WinFanfare teamName={championName} />
       <div className="brk-title">EGPS FAMILY FEUD · TOURNAMENT BRACKET</div>
 
       <div className="brk-headers">
