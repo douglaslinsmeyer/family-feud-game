@@ -206,3 +206,17 @@ describe('reducer: ADVANCE_MATCH', () => {
     expect(s.currentMatchPath).toEqual({ round: 'semis', index: 0 });
   });
 });
+
+// ── Task 15: UNDO ────────────────────────────────────────────────────────────
+describe('reducer: UNDO', () => {
+  it('reverts the last action by replaying the stack from the start of the match', () => {
+    let s = startedTournament();
+    s = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: 'a' });
+    s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 0 });
+    s = reducer(s, { type: 'MARK_STRIKE' });
+    expect(s.bracket.round1[0].questions[0].strikesA).toBe(1);
+    s = reducer(s, { type: 'UNDO' });
+    expect(s.bracket.round1[0].questions[0].strikesA).toBe(0);
+    expect(s.bracket.round1[0].questions[0].revealedAnswers).toEqual([0]);
+  });
+});
