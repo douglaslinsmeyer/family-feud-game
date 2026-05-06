@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import type { PersistenceAdapter } from './adapter';
-import { MemoryAdapter } from './memoryAdapter';
+import { LocalStorageAdapter } from './localStorageAdapter';
 import { DdbAdapter } from './ddbAdapter';
 
 const Ctx = createContext<PersistenceAdapter | null>(null);
@@ -14,7 +14,7 @@ export function PersistenceProvider({ children }: { children: ReactNode }) {
         tableName: import.meta.env.VITE_DDB_TABLE_NAME!,
       });
     }
-    return new MemoryAdapter();
+    return new LocalStorageAdapter();
   }, []);
   return <Ctx.Provider value={adapter}>{children}</Ctx.Provider>;
 }
