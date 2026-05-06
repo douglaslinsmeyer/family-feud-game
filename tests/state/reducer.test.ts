@@ -43,6 +43,16 @@ function startedTournament() {
   return reducer(s, { type: 'START_TOURNAMENT' });
 }
 
+// ── Plan B Task 1: HYDRATE ───────────────────────────────────────────────────
+describe('reducer: HYDRATE', () => {
+  it('replaces state entirely from a snapshot', () => {
+    const snapshot = startedTournament();
+    const empty = initialState();
+    const next = reducer(empty, { type: 'HYDRATE', state: snapshot });
+    expect(next).toEqual(snapshot);
+  });
+});
+
 // ── Task 10: RESOLVE_FACE_OFF ────────────────────────────────────────────────
 describe('reducer: RESOLVE_FACE_OFF', () => {
   it('starts a question with the buzzed-in team active and moves to board_play', () => {

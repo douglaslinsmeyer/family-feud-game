@@ -15,11 +15,7 @@ export function GameStateProvider({ children, isWriter }: { children: ReactNode;
     const id = localStorage.getItem(STORAGE_KEY);
     if (id) {
       persistence.load(id).then(loaded => {
-        if (loaded) {
-          // For MVP: bootstrap from teams; full HYDRATE comes in Plan B.
-          // To at least restore some state, set teams.
-          dispatch({ type: 'SET_TEAMS', teams: loaded.teams });
-        }
+        if (loaded) dispatch({ type: 'HYDRATE', state: loaded });
       }).catch(() => { /* swallow */ });
     } else {
       localStorage.setItem(STORAGE_KEY, state.tournamentId);

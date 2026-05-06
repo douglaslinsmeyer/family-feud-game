@@ -323,6 +323,9 @@ export function reducer(state: TournamentState, action: Action): TournamentState
       };
     }
 
+    case 'HYDRATE':
+      return action.state;
+
     default:
       return state;
   }

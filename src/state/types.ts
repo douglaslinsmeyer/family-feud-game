@@ -75,9 +75,10 @@ export type Action =
   | { type: 'SUBMIT_FM_ANSWER'; player: 1 | 2; answer: FastMoneyAnswer }
   | { type: 'COMPLETE_FAST_MONEY' }
   | { type: 'SET_PROJECTOR_VIEW'; view: ProjectorView }
-  | { type: 'UNDO' };
+  | { type: 'UNDO' }
+  | { type: 'HYDRATE'; state: TournamentState };
 
-export type StackedAction = Exclude<Action, { type: 'UNDO' }>;
+export type StackedAction = Exclude<Action, { type: 'UNDO' } | { type: 'HYDRATE' }>;
 
 export type TournamentState = {
   tournamentId: string;
