@@ -113,3 +113,59 @@ describe('reducer: SWITCH_ACTIVE_TEAM', () => {
     expect(next.bracket.round1[0].questions[0].activeTeamId).toBe('b');
   });
 });
+
+// ── Task 13: AWARD_POINTS_TO_ACTIVE + RESOLVE_STEAL ──────────────────────────
+function pointsForRevealed(questionId: string, indices: number[]) {
+  const q = QUESTIONS.find(q => q.id === questionId)!;
+  return indices.reduce((sum, i) => sum + q.answers[i].points, 0);
+}
+
+describe('reducer: AWARD_POINTS_TO_ACTIVE', () => {
+  it('adds revealed-answer points to active team and marks question awarded', () => {
+    let s = startedTournament();
+    s = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: 'a' });
+    s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 0 });
+    s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 1 });
+    const next = reducer(s, { type: 'AWARD_POINTS_TO_ACTIVE' });
+    const m = next.bracket.round1[0];
+    const q = m.questions[0];
+    const expected = pointsForRevealed(q.questionId, [0, 1]);
+    expect(m.scoreA).toBe(expected);
+    expect(q.pointsAwardedTo).toBe('a');
+    expect(next.currentMatchState).toBe('awarded');
+  });
+});
+
+describe('reducer: RESOLVE_STEAL', () => {
+  it('successful steal awards points to opponent', () => {
+    let s = startedTournament();
+    s = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: 'a' });
+    s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 0 });
+    s = reducer(s, { type: 'MARK_STRIKE' });
+    s = reducer(s, { type: 'MARK_STRIKE' });
+    s = reducer(s, { type: 'MARK_STRIKE' }); // → steal
+    const next = reducer(s, { type: 'RESOLVE_STEAL', successful: true });
+    const m = next.bracket.round1[0];
+    const q = m.questions[0];
+    expect(m.scoreB).toBeGreaterThan(0);
+    expect(m.scoreA).toBe(0);
+    expect(q.stealAttempted).toBe(true);
+    expect(q.stealSuccessful).toBe(true);
+    expect(q.pointsAwardedTo).toBe('b');
+    expect(next.currentMatchState).toBe('awarded');
+  });
+
+  it('failed steal awards points to original active team', () => {
+    let s = startedTournament();
+    s = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: 'a' });
+    s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 0 });
+    s = reducer(s, { type: 'MARK_STRIKE' });
+    s = reducer(s, { type: 'MARK_STRIKE' });
+    s = reducer(s, { type: 'MARK_STRIKE' });
+    const next = reducer(s, { type: 'RESOLVE_STEAL', successful: false });
+    const m = next.bracket.round1[0];
+    expect(m.scoreA).toBeGreaterThan(0);
+    expect(m.scoreB).toBe(0);
+    expect(next.currentMatchState).toBe('awarded');
+  });
+});
