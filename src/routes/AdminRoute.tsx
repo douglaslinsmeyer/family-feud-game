@@ -1,3 +1,10 @@
+import { GameStateProvider } from '../state/GameStateContext';
+import { AdminView } from '../views/admin/AdminView';
+
 export function AdminRoute() {
-  return <div>Admin (placeholder)</div>;
+  return (
+    <GameStateProvider isWriter={true}>
+      <AdminView />
+    </GameStateProvider>
+  );
 }
