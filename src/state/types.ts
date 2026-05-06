@@ -92,4 +92,5 @@ export type TournamentState = {
   projectorView: ProjectorView;
   actionStack: StackedAction[];
   updatedAt: number;
+  matchStartSnapshot: TournamentState | null;
 };
