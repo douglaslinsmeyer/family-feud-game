@@ -169,3 +169,40 @@ describe('reducer: RESOLVE_STEAL', () => {
     expect(next.currentMatchState).toBe('awarded');
   });
 });
+
+// ── Task 14: ADVANCE_MATCH ───────────────────────────────────────────────────
+describe('reducer: ADVANCE_MATCH', () => {
+  function playOutMatch(s: ReturnType<typeof startedTournament>, winnerId: string) {
+    s = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: winnerId });
+    s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 0 });
+    s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 1 });
+    s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 2 });
+    s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 3 });
+    s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 4 });
+    s = reducer(s, { type: 'AWARD_POINTS_TO_ACTIVE' });
+    return reducer(s, { type: 'ADVANCE_MATCH' });
+  }
+
+  it('determines winner by higher score and moves to next match', () => {
+    let s = startedTournament();
+    s = playOutMatch(s, 'a');
+    expect(s.bracket.round1[0].winnerId).toBe('a');
+    expect(s.currentMatchPath).toEqual({ round: 'round1', index: 1 });
+    expect(s.currentMatchState).toBe('face_off');
+  });
+
+  it('after round 1 completes, computes wildcard and seeds semis', () => {
+    let s = startedTournament();
+    s = playOutMatch(s, 'a');  // a beats b
+    s = playOutMatch(s, 'd');  // d beats c
+    s = playOutMatch(s, 'f');  // f beats e
+    expect(s.bracket.wildcard.teamId).not.toBeNull();
+    expect(s.bracket.semis).toHaveLength(2);
+    expect(s.bracket.semis[0].teamAId).toBe('a');
+    expect(s.bracket.semis[0].teamBId).toBe('d');
+    expect(s.bracket.semis[1].teamAId).toBe('f');
+    expect(s.bracket.semis[1].teamBId).toBe(s.bracket.wildcard.teamId);
+    expect(s.bracket.semis[1].isWildcardEntry).toBe(true);
+    expect(s.currentMatchPath).toEqual({ round: 'semis', index: 0 });
+  });
+});
