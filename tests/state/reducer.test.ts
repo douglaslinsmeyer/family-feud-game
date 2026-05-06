@@ -63,3 +63,23 @@ describe('reducer: RESOLVE_FACE_OFF', () => {
     expect(next.questionPool.available).toHaveLength(before - 1);
   });
 });
+
+// ── Task 11: REVEAL_ANSWER ───────────────────────────────────────────────────
+describe('reducer: REVEAL_ANSWER', () => {
+  it('reveals an answer index on the active question', () => {
+    let s = startedTournament();
+    s = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: 'a' });
+    const next = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 0 });
+    const m = next.bracket.round1[0];
+    expect(m.questions[0].revealedAnswers).toEqual([0]);
+  });
+
+  it('does not duplicate an already-revealed answer', () => {
+    let s = startedTournament();
+    s = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: 'a' });
+    s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 0 });
+    const next = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 0 });
+    const m = next.bracket.round1[0];
+    expect(m.questions[0].revealedAnswers).toEqual([0]);
+  });
+});
