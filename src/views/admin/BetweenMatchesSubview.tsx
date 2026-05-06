@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { canAdvanceMatch, teamById } from '../../state/selectors';
 import { getCurrentMatch } from '../../state/bracketLogic';
+import { ConfirmModal } from '../../components/ConfirmModal';
 
 export function BetweenMatchesSubview() {
   const { state, dispatch } = useGameState();
   const match = getCurrentMatch(state);
   const canAdvance = canAdvanceMatch(state);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   if (!match) {
     return <div>No active match</div>;
@@ -22,17 +25,28 @@ export function BetweenMatchesSubview() {
   }
 
   function advanceToNextMatch() {
-    if (
-      window.confirm(
-        'Advance to the next match? This will finalize the current match result.',
-      )
-    ) {
-      dispatch({ type: 'ADVANCE_MATCH' });
-    }
+    setConfirmOpen(true);
+  }
+
+  function handleConfirmAdvance() {
+    setConfirmOpen(false);
+    dispatch({ type: 'ADVANCE_MATCH' });
+  }
+
+  function handleCancelAdvance() {
+    setConfirmOpen(false);
   }
 
   return (
     <div style={{ textAlign: 'center', padding: 32 }}>
+      <ConfirmModal
+        open={confirmOpen}
+        title="Advance to Next Match"
+        message="Advance to the next match? This will finalize the current match result."
+        confirmLabel="Advance"
+        onConfirm={handleConfirmAdvance}
+        onCancel={handleCancelAdvance}
+      />
       <h2 style={{ marginBottom: 24 }}>Question Complete</h2>
 
       <div style={{ display: 'flex', justifyContent: 'center', gap: 40, marginBottom: 32 }}>
