@@ -252,6 +252,16 @@ describe('reducer: Fast Money', () => {
     expect(next.bracket.fastMoney!.player1).toHaveLength(1);
   });
 
+  it('SUBMIT_FM_ANSWER lazy-initializes fastMoney when null', () => {
+    // fastMoney starts as null in initialState; the reducer should auto-init.
+    const s = initialState();
+    expect(s.bracket.fastMoney).toBeNull();
+    const next = reducer(s, { type: 'SUBMIT_FM_ANSWER', player: 1, answer: { text: 'Coffee', points: 52 } });
+    expect(next.bracket.fastMoney).not.toBeNull();
+    expect(next.bracket.fastMoney!.player1).toHaveLength(1);
+    expect(next.bracket.fastMoney!.player2).toHaveLength(0);
+  });
+
   it('COMPLETE_FAST_MONEY sets won=true if total >= 200', () => {
     const base = initialState();
     const s = {

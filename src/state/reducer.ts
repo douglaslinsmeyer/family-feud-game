@@ -296,8 +296,9 @@ export function reducer(state: TournamentState, action: Action): TournamentState
     }
 
     case 'SUBMIT_FM_ANSWER': {
-      const fm = state.bracket.fastMoney;
-      if (!fm) return state;
+      // Lazy-initialize fastMoney record on first call so callers don't need
+      // a separate START_FAST_MONEY action (Plan B will add a cleaner action).
+      const fm = state.bracket.fastMoney ?? { player1: [], player2: [], totalScore: 0, won: false };
       const updated =
         action.player === 1
           ? { ...fm, player1: [...fm.player1, action.answer] }
