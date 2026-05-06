@@ -1,9 +1,8 @@
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
-import type { PersistenceAdapter } from './adapter';
+import { useMemo, type ReactNode } from 'react';
+import { PersistenceCtx } from './PersistenceCtx';
 import { LocalStorageAdapter } from './localStorageAdapter';
 import { DdbAdapter } from './ddbAdapter';
-
-const Ctx = createContext<PersistenceAdapter | null>(null);
+import type { PersistenceAdapter } from './adapter';
 
 export function PersistenceProvider({ children }: { children: ReactNode }) {
   const adapter = useMemo<PersistenceAdapter>(() => {
@@ -16,11 +15,5 @@ export function PersistenceProvider({ children }: { children: ReactNode }) {
     }
     return new LocalStorageAdapter();
   }, []);
-  return <Ctx.Provider value={adapter}>{children}</Ctx.Provider>;
-}
-
-export function usePersistence(): PersistenceAdapter {
-  const a = useContext(Ctx);
-  if (!a) throw new Error('PersistenceProvider missing');
-  return a;
+  return <PersistenceCtx.Provider value={adapter}>{children}</PersistenceCtx.Provider>;
 }

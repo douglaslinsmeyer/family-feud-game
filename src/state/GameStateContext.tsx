@@ -1,15 +1,8 @@
-import { createContext, useContext, useReducer, useEffect, type ReactNode } from 'react';
+import { useReducer, useEffect, type ReactNode } from 'react';
 import { reducer } from './reducer';
 import { initialState } from './initialState';
-import { usePersistence } from '../persistence/PersistenceProvider';
-import type { TournamentState, Action } from './types';
-
-type Ctx = {
-  state: TournamentState;
-  dispatch: (action: Action) => void;
-};
-
-const Ctx = createContext<Ctx | null>(null);
+import { usePersistence } from '../persistence/usePersistence';
+import { GameStateCtx } from './GameStateCtx';
 
 const STORAGE_KEY = 'family-feud:tournamentId';
 
@@ -41,11 +34,5 @@ export function GameStateProvider({ children, isWriter }: { children: ReactNode;
     }
   }, [state, isWriter, persistence]);
 
-  return <Ctx.Provider value={{ state, dispatch }}>{children}</Ctx.Provider>;
-}
-
-export function useGameState() {
-  const v = useContext(Ctx);
-  if (!v) throw new Error('GameStateProvider missing');
-  return v;
+  return <GameStateCtx.Provider value={{ state, dispatch }}>{children}</GameStateCtx.Provider>;
 }

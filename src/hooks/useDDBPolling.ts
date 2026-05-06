@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { TournamentState } from '../state/types';
-import { usePersistence } from '../persistence/PersistenceProvider';
+import { usePersistence } from '../persistence/usePersistence';
 
 export function useTournamentPolling(tournamentId: string, intervalMs = 750) {
   const persistence = usePersistence();
@@ -12,7 +12,7 @@ export function useTournamentPolling(tournamentId: string, intervalMs = 750) {
       try {
         const loaded = await persistence.load(tournamentId);
         if (!cancelled && loaded) setState(loaded);
-      } catch (e) { /* swallow; retry next tick */ }
+      } catch { /* swallow; retry next tick */ }
     }
     tick();
     const id = setInterval(tick, intervalMs);

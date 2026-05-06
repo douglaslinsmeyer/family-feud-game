@@ -1,1 +1,1 @@
-export { useGameState } from '../state/GameStateContext';
+export { useGameState } from '../state/useGameState';

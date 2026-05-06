@@ -222,7 +222,7 @@ export function reducer(state: TournamentState, action: Action): TournamentState
       const winnerId = determineWinner(cur);
       if (!winnerId) throw new Error('Cannot advance — match is tied');
 
-      let bracket = { ...state.bracket };
+      const bracket = { ...state.bracket };
       const path = state.currentMatchPath!;
       if (path.round === 'round1') {
         const round1 = [...bracket.round1];
