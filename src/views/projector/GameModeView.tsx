@@ -4,10 +4,12 @@ import type { TournamentState } from '../../state/types';
 import { QUESTIONS } from '../../content/questions';
 import { getCurrentMatch } from '../../state/bracketLogic';
 import { matchOverWinningTeamId } from '../../state/selectors';
+import { useSfx } from '../../audio/AudioContext';
 import { StrikeOverlay } from './StrikeOverlay';
 import './GameModeView.css';
 
 export function GameModeView({ state }: { state: TournamentState }) {
+  const { play } = useSfx();
   const m = getCurrentMatch(state);
   const q = m ? m.questions[m.questions.length - 1] : null;
   const def = q ? QUESTIONS.find(d => d.id === q.questionId) : null;
@@ -17,6 +19,7 @@ export function GameModeView({ state }: { state: TournamentState }) {
   const strikes = activeIsA ? q?.strikesA : q?.strikesB;
   const winnerTeamId = matchOverWinningTeamId(state);
 
+  // --- Strike detection ---
   const totalStrikes = (q?.strikesA ?? 0) + (q?.strikesB ?? 0);
   const prevTotalStrikes = useRef(totalStrikes);
   const [strikeVisible, setStrikeVisible] = useState(false);
@@ -24,12 +27,43 @@ export function GameModeView({ state }: { state: TournamentState }) {
   useEffect(() => {
     if (totalStrikes > prevTotalStrikes.current) {
       setStrikeVisible(true);
+      play('strike');
       const t = setTimeout(() => setStrikeVisible(false), 1200);
       prevTotalStrikes.current = totalStrikes;
       return () => clearTimeout(t);
     }
     prevTotalStrikes.current = totalStrikes;
-  }, [totalStrikes]);
+  }, [totalStrikes, play]);
+
+  // --- Reveal detection ---
+  const revealedCount = q?.revealedAnswers.length ?? 0;
+  const prevRevealed = useRef(revealedCount);
+  useEffect(() => {
+    if (revealedCount > prevRevealed.current) {
+      play('reveal');
+    }
+    prevRevealed.current = revealedCount;
+  }, [revealedCount, play]);
+
+  // --- Match-end detection ---
+  const matchState = state.currentMatchState;
+  const prevMatchState = useRef(matchState);
+  useEffect(() => {
+    if (matchState === 'awarded' && prevMatchState.current !== 'awarded') {
+      play('matchEnd');
+    }
+    prevMatchState.current = matchState;
+  }, [matchState, play]);
+
+  // --- Champion detection ---
+  const champion = state.bracket.champion;
+  const prevChampion = useRef(champion);
+  useEffect(() => {
+    if (champion !== null && prevChampion.current === null) {
+      play('champion');
+    }
+    prevChampion.current = champion;
+  }, [champion, play]);
 
   if (!m) return <div style={{ padding: 48 }}>Tournament not started.</div>;
 
