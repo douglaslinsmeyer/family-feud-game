@@ -1,7 +1,7 @@
 import { motion, AnimatePresence, animate, useMotionValue } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 import type { TournamentState } from '../../state/types';
-import { useSfx } from '../../audio/AudioContext';
+import { useSfx } from '../../audio/useSfx';
 
 /**
  * Animates from 0 up to `to` over ~3 seconds.

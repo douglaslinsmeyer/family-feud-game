@@ -4,7 +4,7 @@ import type { TournamentState } from '../../state/types';
 import { QUESTIONS } from '../../content/questions';
 import { getCurrentMatch } from '../../state/bracketLogic';
 import { matchOverWinningTeamId } from '../../state/selectors';
-import { useSfx } from '../../audio/AudioContext';
+import { useSfx } from '../../audio/useSfx';
 import { StrikeOverlay } from './StrikeOverlay';
 import './GameModeView.css';
 

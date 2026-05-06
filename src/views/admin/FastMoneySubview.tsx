@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { QUESTIONS } from '../../content/questions';
 import { FAST_MONEY_QUESTION_IDS } from '../../content/fastMoneyConfig';
-import { useSfx } from '../../audio/AudioContext';
+import { useSfx } from '../../audio/useSfx';
 import type { FastMoneyAnswer } from '../../state/types';
 
 const FM_QUESTIONS = FAST_MONEY_QUESTION_IDS.map(id => QUESTIONS.find(q => q.id === id)!).filter(Boolean);

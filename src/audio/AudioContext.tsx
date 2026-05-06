@@ -1,21 +1,5 @@
-import { createContext, useContext, useRef, useState, useCallback, type ReactNode } from 'react';
-
-const SFX = {
-  reveal:    '/audio/reveal-ding.mp3',
-  strike:    '/audio/strike-sting.mp3',
-  matchEnd:  '/audio/match-end.mp3',
-  champion:  '/audio/champion-fanfare.mp3',
-  fmTick:    '/audio/fm-tick.mp3',
-  fmTimeUp:  '/audio/fm-time-up.mp3',
-};
-export type SfxName = keyof typeof SFX;
-
-type AudioCtx = {
-  unlocked: boolean;
-  unlock: () => void;
-  play: (name: SfxName) => void;
-};
-const Ctx = createContext<AudioCtx | null>(null);
+import { useRef, useState, useCallback, type ReactNode } from 'react';
+import { SFX, AudioCtx, type SfxName } from './audioTypes';
 
 export function AudioProvider({ children }: { children: ReactNode }) {
   const [unlocked, setUnlocked] = useState(false);
@@ -42,11 +26,5 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     a.play().catch(() => {});
   }, [unlocked]);
 
-  return <Ctx.Provider value={{ unlocked, unlock, play }}>{children}</Ctx.Provider>;
-}
-
-export function useSfx() {
-  const v = useContext(Ctx);
-  if (!v) throw new Error('useSfx must be used within AudioProvider');
-  return v;
+  return <AudioCtx.Provider value={{ unlocked, unlock, play }}>{children}</AudioCtx.Provider>;
 }

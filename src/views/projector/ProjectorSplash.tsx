@@ -1,4 +1,4 @@
-import { useSfx } from '../../audio/AudioContext';
+import { useSfx } from '../../audio/useSfx';
 
 export function ProjectorSplash() {
   const { unlock } = useSfx();

@@ -13,23 +13,25 @@ interface Props {
  * by clicking the overlay.
  */
 export function WinFanfare({ teamName }: Props) {
-  const [visible, setVisible] = useState(false);
-  const [shownTeam, setShownTeam] = useState<string | null>(null);
+  // dismissed: user has clicked to close, or auto-timer fired
+  const [dismissed, setDismissed] = useState(false);
+  // Track which team triggered the current celebration, to reset dismissed on a new champion
+  const [lastTeam, setLastTeam] = useState<string | null>(null);
 
-  // Delay-mount 1s after champion is set, then auto-dismiss after 12s
+  // When a new champion is set, reset the dismissed state
+  if (teamName !== null && teamName !== lastTeam) {
+    setLastTeam(teamName);
+    setDismissed(false);
+  }
+
+  // Auto-dismiss after 12 seconds from when the overlay appears
   useEffect(() => {
-    if (!teamName) {
-      setVisible(false);
-      return;
-    }
-    setShownTeam(teamName);
-    const mountTimer = setTimeout(() => setVisible(true), 1000);
-    const dismissTimer = setTimeout(() => setVisible(false), 13000); // 1s delay + 12s display
-    return () => {
-      clearTimeout(mountTimer);
-      clearTimeout(dismissTimer);
-    };
-  }, [teamName]);
+    if (!teamName || dismissed) return;
+    const t = setTimeout(() => setDismissed(true), 13000);
+    return () => clearTimeout(t);
+  }, [teamName, dismissed]);
+
+  const visible = teamName !== null && !dismissed;
 
   return (
     <AnimatePresence>
@@ -39,7 +41,7 @@ export function WinFanfare({ teamName }: Props) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.6 }}
-          onClick={() => setVisible(false)}
+          onClick={() => setDismissed(true)}
           style={{
             position: 'fixed',
             inset: 0,
@@ -81,7 +83,7 @@ export function WinFanfare({ teamName }: Props) {
               maxWidth: '90vw',
             }}
           >
-            {shownTeam}
+            {teamName}
           </motion.div>
 
           <motion.div

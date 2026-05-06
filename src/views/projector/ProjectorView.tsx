@@ -1,5 +1,5 @@
 import { useTournamentPolling } from '../../hooks/useDDBPolling';
-import { useSfx } from '../../audio/AudioContext';
+import { useSfx } from '../../audio/useSfx';
 import { GameModeView } from './GameModeView';
 import { BracketView } from './BracketView';
 import { FastMoneyView } from './FastMoneyView';
