@@ -1,73 +1,65 @@
-# React + TypeScript + Vite
+# EGPS Family Feud Game
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Web-based Family Feud tournament game for the EGPS company conference event. Built as a React SPA on AWS (S3 + CloudFront + DynamoDB).
 
-Currently, two official plugins are available:
+## Local development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+PATH="/home/douglasl/.nvm/versions/node/v25.9.0/bin:$PATH" npm install
+PATH="/home/douglasl/.nvm/versions/node/v25.9.0/bin:$PATH" npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Visit http://localhost:5173/admin in one window and http://localhost:5173/projector in another. State syncs across windows via localStorage (dev) or DynamoDB (deployed).
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Tests
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+PATH="/home/douglasl/.nvm/versions/node/v25.9.0/bin:$PATH" npm run test:run
 ```
+
+## Deploy to AWS
+
+Prereq: AWS CLI configured with credentials (`aws sts get-caller-identity` should work). CDK requires the target account/region to be bootstrapped:
+
+```bash
+cd infra && PATH="/home/douglasl/.nvm/versions/node/v25.9.0/bin:$PATH" npx cdk bootstrap
+```
+
+Then from the project root:
+
+```bash
+PATH="/home/douglasl/.nvm/versions/node/v25.9.0/bin:$PATH" npm run deploy
+```
+
+This provisions S3+CloudFront+DynamoDB+Cognito (idempotent), builds the SPA with the right env vars, syncs to S3, and invalidates the CloudFront cache. The deploy URL prints at the end.
+
+> **Note:** AWS session credentials were expired at the time of last deploy attempt. Run `aws login` or refresh your SSO session, then re-run `npm run deploy`.
+
+## How to run a tournament
+
+Day-of-event quick reference:
+
+1. Connect projector via HDMI in **extended display** mode (not mirrored). Set projector to 1920x1080.
+2. Open the deployed URL `/admin` on the laptop screen.
+3. Click **Open Projector Window** in admin. Drag the new window to the projector display, F11 to fullscreen.
+4. **Register 6 teams** in admin (team name + member names) then click **Start Tournament**.
+5. For each match: Face-off, reveal answers, mark strikes, award points, advance to next match.
+6. Use the projector glyph buttons in admin (top-right) to switch the projector between the game-mode view and the bracket view.
+7. After Round 1 completes, the system auto-computes the wildcard team and slots them into Semi 2.
+8. Final -> Fast Money -> champion declared.
+
+## Recovery
+
+- Browser crashes? Reopen `/admin` — the in-progress tournament resumes from localStorage (or DynamoDB if deployed). Re-open projector window if needed.
+- Misclicked? **Undo** button in admin (Ctrl+Z hotkey arrives in Plan B).
+
+## Architecture
+
+- Frontend: React 19 + Vite + TypeScript, deployed as a static SPA on S3 + CloudFront.
+- State: single-tournament reducer in browser, persisted to DynamoDB via Cognito unauth identity pool.
+- Cross-window sync: admin writes, projector polls every 750ms.
+- See `docs/superpowers/specs/2026-05-05-family-feud-game-design.md` for full design.
+
+## Status
+
+This is the **MVP** (Plan A) — functional, end-to-end, minimal styling. Visual polish + audio + Fast Money theatrics are Plan B (`docs/superpowers/plans/2026-05-05-family-feud-polish.md`).
