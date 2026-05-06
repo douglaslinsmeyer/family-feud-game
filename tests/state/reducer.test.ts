@@ -220,3 +220,54 @@ describe('reducer: UNDO', () => {
     expect(s.bracket.round1[0].questions[0].revealedAnswers).toEqual([0]);
   });
 });
+
+// ── Task 16: SET_PROJECTOR_VIEW + SKIP_QUESTION + Fast Money ─────────────────
+describe('reducer: SET_PROJECTOR_VIEW', () => {
+  it('toggles between game and bracket', () => {
+    const s = initialState();
+    expect(reducer(s, { type: 'SET_PROJECTOR_VIEW', view: 'bracket' }).projectorView).toBe('bracket');
+  });
+});
+
+describe('reducer: SKIP_QUESTION', () => {
+  it('discards the current question and returns to face-off', () => {
+    let s = startedTournament();
+    s = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: 'a' });
+    const next = reducer(s, { type: 'SKIP_QUESTION' });
+    expect(next.bracket.round1[0].questions).toHaveLength(0);
+    expect(next.currentMatchState).toBe('face_off');
+  });
+});
+
+describe('reducer: Fast Money', () => {
+  it("SUBMIT_FM_ANSWER appends to the player's answers", () => {
+    const s = {
+      ...initialState(),
+      bracket: {
+        ...initialState().bracket,
+        fastMoney: { player1: [], player2: [], totalScore: 0, won: false },
+      },
+    };
+    const next = reducer(s, { type: 'SUBMIT_FM_ANSWER', player: 1, answer: { text: 'Coffee', points: 52 } });
+    expect(next.bracket.fastMoney!.player1).toHaveLength(1);
+  });
+
+  it('COMPLETE_FAST_MONEY sets won=true if total >= 200', () => {
+    const base = initialState();
+    const s = {
+      ...base,
+      bracket: {
+        ...base.bracket,
+        fastMoney: {
+          player1: [{ text: 'a', points: 120 }],
+          player2: [{ text: 'b', points: 80 }],
+          totalScore: 0,
+          won: false,
+        },
+      },
+    };
+    const next = reducer(s, { type: 'COMPLETE_FAST_MONEY' });
+    expect(next.bracket.fastMoney!.totalScore).toBe(200);
+    expect(next.bracket.fastMoney!.won).toBe(true);
+  });
+});
