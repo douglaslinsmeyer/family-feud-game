@@ -83,3 +83,33 @@ describe('reducer: REVEAL_ANSWER', () => {
     expect(m.questions[0].revealedAnswers).toEqual([0]);
   });
 });
+
+// ── Task 12: MARK_STRIKE + SWITCH_ACTIVE_TEAM ────────────────────────────────
+describe('reducer: MARK_STRIKE', () => {
+  it('increments strikes for active team', () => {
+    let s = startedTournament();
+    s = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: 'a' });
+    const next = reducer(s, { type: 'MARK_STRIKE' });
+    expect(next.bracket.round1[0].questions[0].strikesA).toBe(1);
+    expect(next.currentMatchState).toBe('board_play');
+  });
+
+  it('on third strike, transitions to steal state', () => {
+    let s = startedTournament();
+    s = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: 'a' });
+    s = reducer(s, { type: 'MARK_STRIKE' });
+    s = reducer(s, { type: 'MARK_STRIKE' });
+    s = reducer(s, { type: 'MARK_STRIKE' });
+    expect(s.currentMatchState).toBe('steal');
+    expect(s.bracket.round1[0].questions[0].strikesA).toBe(3);
+  });
+});
+
+describe('reducer: SWITCH_ACTIVE_TEAM', () => {
+  it('flips the active team', () => {
+    let s = startedTournament();
+    s = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: 'a' });
+    const next = reducer(s, { type: 'SWITCH_ACTIVE_TEAM' });
+    expect(next.bracket.round1[0].questions[0].activeTeamId).toBe('b');
+  });
+});
