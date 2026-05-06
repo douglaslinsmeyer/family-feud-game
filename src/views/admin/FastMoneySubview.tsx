@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { QUESTIONS } from '../../content/questions';
 import { FAST_MONEY_QUESTION_IDS } from '../../content/fastMoneyConfig';
+import { useSfx } from '../../audio/AudioContext';
 import type { FastMoneyAnswer } from '../../state/types';
 
 const FM_QUESTIONS = FAST_MONEY_QUESTION_IDS.map(id => QUESTIONS.find(q => q.id === id)!).filter(Boolean);
@@ -13,6 +14,7 @@ type Phase = 'player1' | 'player2' | 'reveal';
 
 export function FastMoneySubview() {
   const { state, dispatch } = useGameState();
+  const { play } = useSfx();
   const fm = state.bracket.fastMoney;
 
   const [phase, setPhase] = useState<Phase>('player1');
@@ -27,6 +29,18 @@ export function FastMoneySubview() {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, []);
+
+  // Clock tick / time-up sounds
+  useEffect(() => {
+    if (!timerRunning) return;
+    if (timeLeft <= 0) {
+      play('fmTimeUp');
+      return;
+    }
+    if (timeLeft <= 10) {
+      play('fmTick');
+    }
+  }, [timeLeft, timerRunning, play]);
 
   function startTimer() {
     setTimeLeft(TIMER_SECONDS);
