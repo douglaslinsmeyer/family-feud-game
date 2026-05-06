@@ -18,39 +18,20 @@ export function FaceOffSubview() {
   }
 
   return (
-    <div style={{ textAlign: 'center', padding: 32 }}>
-      <h2 style={{ marginBottom: 32 }}>Face-Off — Who answered first?</h2>
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 32 }}>
-        <button
-          onClick={() => resolve(match.teamAId)}
-          style={{
-            fontSize: '2rem',
-            padding: '32px 48px',
-            minWidth: 200,
-            fontWeight: 'bold',
-          }}
-        >
+    <div className="adm-faceoff">
+      <h2>Face-Off — Who answered first?</h2>
+      <div className="adm-faceoff-buttons">
+        <button className="adm-faceoff-btn" onClick={() => resolve(match.teamAId)}>
           {teamA?.name ?? match.teamAId}
-          <div style={{ fontSize: '1rem', marginTop: 8, color: '#aaa' }}>
-            Score: {match.scoreA}
-          </div>
+          <span className="sub">Score: {match.scoreA}</span>
         </button>
         <button
+          className="adm-faceoff-btn"
           onClick={() => match.teamBId && resolve(match.teamBId)}
           disabled={!match.teamBId}
-          style={{
-            fontSize: '2rem',
-            padding: '32px 48px',
-            minWidth: 200,
-            fontWeight: 'bold',
-            opacity: match.teamBId ? 1 : 0.4,
-            cursor: match.teamBId ? 'pointer' : 'not-allowed',
-          }}
         >
           {teamB?.name ?? (match.teamBId ?? 'TBD')}
-          <div style={{ fontSize: '1rem', marginTop: 8, color: '#aaa' }}>
-            Score: {match.scoreB}
-          </div>
+          <span className="sub">Score: {match.scoreB}</span>
         </button>
       </div>
     </div>

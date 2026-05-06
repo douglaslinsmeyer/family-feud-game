@@ -46,37 +46,22 @@ export function SetupSubview() {
   const canStart = teams.every(t => t.name.trim().length > 0);
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto' }}>
-      <h2 style={{ marginBottom: 16 }}>Team Registration</h2>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 16,
-          marginBottom: 24,
-        }}
-      >
+    <div className="adm-setup">
+      <h2>Team Registration</h2>
+      <div className="adm-team-grid">
         {teams.map((team, i) => (
-          <div
-            key={team.id}
-            style={{
-              border: '1px solid var(--gold-dim, #888)',
-              borderRadius: 8,
-              padding: 12,
-            }}
-          >
-            <label style={{ display: 'block', marginBottom: 8, fontWeight: 'bold' }}>
+          <div key={team.id} className="adm-team-entry">
+            <label>
               Team {i + 1} Name
               <input
                 type="text"
                 value={team.name}
                 onChange={e => update(i, { name: e.target.value })}
                 placeholder={`Team ${i + 1}`}
-                style={{ display: 'block', width: '100%', marginTop: 4, padding: '4px 8px' }}
               />
             </label>
             <div style={{ marginTop: 8 }}>
-              <div style={{ fontSize: '0.85em', marginBottom: 4, color: '#aaa' }}>
+              <div style={{ fontSize: '0.8em', marginBottom: 4, color: 'rgba(255,255,255,0.4)', letterSpacing: '1px', textTransform: 'uppercase', fontFamily: 'Inter, sans-serif' }}>
                 Players (optional)
               </div>
               {team.members.map((m, mi) => (
@@ -86,13 +71,7 @@ export function SetupSubview() {
                   value={m}
                   onChange={e => updateMember(i, mi, e.target.value)}
                   placeholder={`Player ${mi + 1}`}
-                  style={{
-                    display: 'block',
-                    width: '100%',
-                    marginBottom: 4,
-                    padding: '3px 8px',
-                    fontSize: '0.9em',
-                  }}
+                  style={{ marginBottom: 4, fontSize: '0.9em' }}
                 />
               ))}
             </div>
@@ -100,24 +79,18 @@ export function SetupSubview() {
         ))}
       </div>
 
-      <div style={{ display: 'flex', gap: 12 }}>
-        <button
-          onClick={openProjectorWindow}
-          style={{ padding: '8px 16px' }}
-        >
+      <div className="adm-setup-actions">
+        <button className="adm-btn" style={{ padding: '10px 20px' }} onClick={openProjectorWindow}>
           Open Projector Window
         </button>
         <button
+          className="adm-next"
+          style={{ flex: 1, maxWidth: 260 }}
           onClick={startTournament}
           disabled={!canStart}
-          style={{
-            padding: '8px 20px',
-            fontWeight: 'bold',
-            opacity: canStart ? 1 : 0.5,
-            cursor: canStart ? 'pointer' : 'not-allowed',
-          }}
         >
           Start Tournament
+          {!canStart && <span className="sub">fill all team names first</span>}
         </button>
       </div>
     </div>
