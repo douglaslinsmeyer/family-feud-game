@@ -1,1 +1,28 @@
+# Project
 .superpowers/
+
+# Node / Vite
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Env files (allow .env.example)
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Build / cache
+.vite/
+.turbo/
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
