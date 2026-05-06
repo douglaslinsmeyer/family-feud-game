@@ -23,3 +23,10 @@ export function canAdvanceMatch(state: TournamentState): boolean {
   if (!m) return false;
   return state.currentMatchState === 'awarded' && m.scoreA !== m.scoreB;
 }
+
+export function matchOverWinningTeamId(state: TournamentState): string | null {
+  const m = getCurrentMatch(state);
+  if (!m || state.currentMatchState !== 'awarded') return null;
+  if (m.scoreA === m.scoreB) return null;
+  return m.scoreA > m.scoreB ? m.teamAId : m.teamBId;
+}
