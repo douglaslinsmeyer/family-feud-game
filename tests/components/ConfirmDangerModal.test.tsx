@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ConfirmDangerModal } from '../../src/components/ConfirmDangerModal';
@@ -13,6 +13,10 @@ const baseProps = {
 };
 
 describe('ConfirmDangerModal', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('renders nothing when open is false', () => {
     const onConfirm = vi.fn();
     const onCancel = vi.fn();

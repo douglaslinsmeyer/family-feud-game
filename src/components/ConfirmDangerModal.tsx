@@ -47,10 +47,11 @@ export function ConfirmDangerModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="confirm-modal-title"
+        aria-describedby="confirm-modal-body"
         onClick={e => e.stopPropagation()}
       >
         <h2 id="confirm-modal-title" className="confirm-modal-title">{title}</h2>
-        <div className="confirm-modal-body">{body}</div>
+        <div id="confirm-modal-body" className="confirm-modal-body">{body}</div>
         <div className="confirm-modal-actions">
           <button
             ref={cancelRef}
