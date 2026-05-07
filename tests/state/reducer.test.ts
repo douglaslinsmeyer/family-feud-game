@@ -43,6 +43,16 @@ function startedTournament() {
   return reducer(s, { type: 'START_TOURNAMENT' });
 }
 
+// Take board for `teamId` via the new face-off flow: buzz in, give the #1
+// answer (auto-win), then keep. Equivalent to the old RESOLVE_FACE_OFF in
+// outcome (team becomes active, state → board_play), but reveals answer 0.
+// REVEAL_ANSWER 0 after this is a no-op dedupe.
+function takeBoardWith(s: ReturnType<typeof startedTournament>, teamId: string) {
+  s = reducer(s, { type: 'FACEOFF_BUZZ_IN', teamId });
+  s = reducer(s, { type: 'FACEOFF_FIRST_ANSWER', answerIndex: 0 });
+  return reducer(s, { type: 'FACEOFF_KEEP' });
+}
+
 // ── Plan B Task 1: HYDRATE ───────────────────────────────────────────────────
 describe('reducer: HYDRATE', () => {
   it('replaces state entirely from a snapshot', () => {
@@ -53,44 +63,23 @@ describe('reducer: HYDRATE', () => {
   });
 });
 
-// ── Task 10: RESOLVE_FACE_OFF ────────────────────────────────────────────────
-describe('reducer: RESOLVE_FACE_OFF', () => {
-  it('starts a question with the buzzed-in team active and moves to board_play', () => {
-    const s = startedTournament();
-    const next = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: 'a' });
-    expect(next.currentMatchState).toBe('board_play');
-    const r1m1 = next.bracket.round1[0];
-    expect(r1m1.questions).toHaveLength(1);
-    expect(r1m1.questions[0].activeTeamId).toBe('a');
-    expect(r1m1.questions[0].revealedAnswers).toEqual([]);
-  });
-
-  it('picks a random unused question from the main pool', () => {
-    const s = startedTournament();
-    const before = s.questionPool.available.length;
-    const next = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: 'a' });
-    expect(next.questionPool.used).toHaveLength(1);
-    expect(next.questionPool.available).toHaveLength(before - 1);
-  });
-});
-
 // ── Task 11: REVEAL_ANSWER ───────────────────────────────────────────────────
 describe('reducer: REVEAL_ANSWER', () => {
   it('reveals an answer index on the active question', () => {
     let s = startedTournament();
-    s = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: 'a' });
-    const next = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 0 });
+    s = takeBoardWith(s, 'a');
+    const next = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 1 });
     const m = next.bracket.round1[0];
-    expect(m.questions[0].revealedAnswers).toEqual([0]);
+    expect(m.questions[0].revealedAnswers).toContain(1);
   });
 
   it('does not duplicate an already-revealed answer', () => {
     let s = startedTournament();
-    s = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: 'a' });
-    s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 0 });
-    const next = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 0 });
+    s = takeBoardWith(s, 'a');
+    s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 1 });
+    const next = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 1 });
     const m = next.bracket.round1[0];
-    expect(m.questions[0].revealedAnswers).toEqual([0]);
+    expect(m.questions[0].revealedAnswers.filter(i => i === 1)).toHaveLength(1);
   });
 });
 
@@ -98,7 +87,7 @@ describe('reducer: REVEAL_ANSWER', () => {
 describe('reducer: MARK_STRIKE', () => {
   it('increments strikes for active team', () => {
     let s = startedTournament();
-    s = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: 'a' });
+    s = takeBoardWith(s, 'a');
     const next = reducer(s, { type: 'MARK_STRIKE' });
     expect(next.bracket.round1[0].questions[0].strikesA).toBe(1);
     expect(next.currentMatchState).toBe('board_play');
@@ -106,7 +95,7 @@ describe('reducer: MARK_STRIKE', () => {
 
   it('on third strike, transitions to steal state', () => {
     let s = startedTournament();
-    s = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: 'a' });
+    s = takeBoardWith(s, 'a');
     s = reducer(s, { type: 'MARK_STRIKE' });
     s = reducer(s, { type: 'MARK_STRIKE' });
     s = reducer(s, { type: 'MARK_STRIKE' });
@@ -118,7 +107,7 @@ describe('reducer: MARK_STRIKE', () => {
 describe('reducer: SWITCH_ACTIVE_TEAM', () => {
   it('flips the active team', () => {
     let s = startedTournament();
-    s = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: 'a' });
+    s = takeBoardWith(s, 'a');
     const next = reducer(s, { type: 'SWITCH_ACTIVE_TEAM' });
     expect(next.bracket.round1[0].questions[0].activeTeamId).toBe('b');
   });
@@ -133,8 +122,7 @@ function pointsForRevealed(questionId: string, indices: number[]) {
 describe('reducer: AWARD_POINTS_TO_ACTIVE', () => {
   it('adds revealed-answer points to active team and marks question awarded', () => {
     let s = startedTournament();
-    s = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: 'a' });
-    s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 0 });
+    s = takeBoardWith(s, 'a');
     s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 1 });
     const next = reducer(s, { type: 'AWARD_POINTS_TO_ACTIVE' });
     const m = next.bracket.round1[0];
@@ -149,8 +137,7 @@ describe('reducer: AWARD_POINTS_TO_ACTIVE', () => {
 describe('reducer: RESOLVE_STEAL', () => {
   it('successful steal awards points to opponent', () => {
     let s = startedTournament();
-    s = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: 'a' });
-    s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 0 });
+    s = takeBoardWith(s, 'a');
     s = reducer(s, { type: 'MARK_STRIKE' });
     s = reducer(s, { type: 'MARK_STRIKE' });
     s = reducer(s, { type: 'MARK_STRIKE' }); // → steal
@@ -167,8 +154,7 @@ describe('reducer: RESOLVE_STEAL', () => {
 
   it('failed steal awards points to original active team', () => {
     let s = startedTournament();
-    s = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: 'a' });
-    s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 0 });
+    s = takeBoardWith(s, 'a');
     s = reducer(s, { type: 'MARK_STRIKE' });
     s = reducer(s, { type: 'MARK_STRIKE' });
     s = reducer(s, { type: 'MARK_STRIKE' });
@@ -183,8 +169,7 @@ describe('reducer: RESOLVE_STEAL', () => {
 // ── Task 14: ADVANCE_MATCH ───────────────────────────────────────────────────
 describe('reducer: ADVANCE_MATCH', () => {
   function playOutMatch(s: ReturnType<typeof startedTournament>, winnerId: string) {
-    s = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: winnerId });
-    s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 0 });
+    s = takeBoardWith(s, winnerId);
     s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 1 });
     s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 2 });
     s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 3 });
@@ -221,13 +206,13 @@ describe('reducer: ADVANCE_MATCH', () => {
 describe('reducer: UNDO', () => {
   it('reverts the last action by replaying the stack from the start of the match', () => {
     let s = startedTournament();
-    s = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: 'a' });
-    s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 0 });
+    s = takeBoardWith(s, 'a');
+    s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 1 });
     s = reducer(s, { type: 'MARK_STRIKE' });
     expect(s.bracket.round1[0].questions[0].strikesA).toBe(1);
     s = reducer(s, { type: 'UNDO' });
     expect(s.bracket.round1[0].questions[0].strikesA).toBe(0);
-    expect(s.bracket.round1[0].questions[0].revealedAnswers).toEqual([0]);
+    expect(s.bracket.round1[0].questions[0].revealedAnswers).toContain(1);
   });
 });
 
@@ -240,11 +225,12 @@ describe('reducer: SET_PROJECTOR_VIEW', () => {
 });
 
 describe('reducer: SKIP_QUESTION', () => {
-  it('discards the current question and returns to face-off', () => {
-    let s = startedTournament();
-    s = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: 'a' });
+  it('discards the current question and starts a fresh face-off', () => {
+    const s = startedTournament();
+    const oldQid = s.bracket.round1[0].questions[0].questionId;
     const next = reducer(s, { type: 'SKIP_QUESTION' });
-    expect(next.bracket.round1[0].questions).toHaveLength(0);
+    expect(next.bracket.round1[0].questions).toHaveLength(1);
+    expect(next.bracket.round1[0].questions[0].questionId).not.toBe(oldQid);
     expect(next.currentMatchState).toBe('face_off');
   });
 });

@@ -1,5 +1,7 @@
 # Project
 .superpowers/
+.claire/
+.claude/
 
 # Node / Vite
 node_modules/

@@ -1,4 +1,4 @@
-import type { TournamentState, Action, Match, QuestionPlay } from './types';
+import type { TournamentState, Action, Match, QuestionPlay, FaceOff, MatchPath } from './types';
 import { getCurrentMatch, pickRandom, computeWildcard, nextMatchPath } from './bracketLogic';
 import { QUESTIONS } from '../content/questions';
 
@@ -10,6 +10,99 @@ function emptyMatch(teamAId: string, teamBId: string | null): Match {
     scoreA: 0,
     scoreB: 0,
     winnerId: null,
+  };
+}
+
+function emptyFaceOff(): FaceOff {
+  return {
+    firstBuzzTeamId: null,
+    firstAnswerIndex: null,
+    firstAnswerSubmitted: false,
+    secondAnswerIndex: null,
+    secondAnswerSubmitted: false,
+    winnerId: null,
+    decision: null,
+  };
+}
+
+function createInitialQuestionPlay(questionId: string): QuestionPlay {
+  return {
+    questionId,
+    faceOff: emptyFaceOff(),
+    revealedAnswers: [],
+    strikesA: 0,
+    strikesB: 0,
+    activeTeamId: null,
+    pointsAwardedTo: null,
+    stealAttempted: false,
+    stealSuccessful: null,
+  };
+}
+
+function pickFaceOffQuestion(state: TournamentState): {
+  questionId: string;
+  available: string[];
+  used: string[];
+} {
+  const available = state.questionPool.available;
+  if (available.length === 0) throw new Error('Question pool exhausted');
+  const questionId = pickRandom(available);
+  return {
+    questionId,
+    available: available.filter(id => id !== questionId),
+    used: [...state.questionPool.used, questionId],
+  };
+}
+
+function resolveFaceOffWinner(fo: FaceOff, questionId: string, m: Match): string | null {
+  if (!fo.firstBuzzTeamId || !m.teamBId) return null;
+  const otherTeamId = fo.firstBuzzTeamId === m.teamAId ? m.teamBId : m.teamAId;
+  const def = QUESTIONS.find(d => d.id === questionId);
+  const firstPts = fo.firstAnswerIndex !== null && def
+    ? def.answers[fo.firstAnswerIndex]?.points ?? 0
+    : 0;
+  const secondPts = fo.secondAnswerIndex !== null && def
+    ? def.answers[fo.secondAnswerIndex]?.points ?? 0
+    : 0;
+  if (firstPts === 0 && secondPts === 0) return null;  // both wrong/no answer → host adjudicates
+  if (secondPts > firstPts) return otherTeamId;
+  return fo.firstBuzzTeamId;  // ties go to the buzzer
+}
+
+function seedMatchQuestion(
+  bracket: TournamentState['bracket'],
+  path: MatchPath,
+  play: QuestionPlay,
+): TournamentState['bracket'] {
+  if (path.round === 'round1') {
+    const r1 = [...bracket.round1];
+    r1[path.index] = { ...r1[path.index], questions: [play] };
+    return { ...bracket, round1: r1 };
+  }
+  if (path.round === 'semis') {
+    const sm = [...bracket.semis];
+    sm[path.index] = { ...sm[path.index], questions: [play] };
+    return { ...bracket, semis: sm };
+  }
+  if (path.round === 'final' && bracket.final) {
+    return { ...bracket, final: { ...bracket.final, questions: [play] } };
+  }
+  return bracket;
+}
+
+function migrateHydratedState(s: TournamentState): TournamentState {
+  const migrateQ = (q: QuestionPlay): QuestionPlay =>
+    q.faceOff ? q : { ...q, faceOff: emptyFaceOff() };
+  const migrateMatch = (m: Match): Match =>
+    m.questions.length === 0 ? m : { ...m, questions: m.questions.map(migrateQ) };
+  return {
+    ...s,
+    bracket: {
+      ...s.bracket,
+      round1: s.bracket.round1.map(migrateMatch),
+      semis: s.bracket.semis.map(migrateMatch),
+      final: s.bracket.final ? migrateMatch(s.bracket.final) : null,
+    },
   };
 }
 
@@ -55,8 +148,10 @@ export function reducer(state: TournamentState, action: Action): TournamentState
         throw new Error('Need exactly 6 teams to start tournament');
       }
       const [a, b, c, d, e, f] = state.teams;
+      const pick = pickFaceOffQuestion(state);
+      const firstPlay = createInitialQuestionPlay(pick.questionId);
       const round1: Match[] = [
-        emptyMatch(a.id, b.id),
+        { ...emptyMatch(a.id, b.id), questions: [firstPlay] },
         emptyMatch(c.id, d.id),
         emptyMatch(e.id, f.id),
       ];
@@ -66,37 +161,128 @@ export function reducer(state: TournamentState, action: Action): TournamentState
         bracket: { ...state.bracket, round1 },
         currentMatchPath: { round: 'round1', index: 0 },
         currentMatchState: 'face_off',
+        questionPool: { used: pick.used, available: pick.available },
         updatedAt: Date.now(),
       };
     }
 
-    case 'RESOLVE_FACE_OFF': {
-      const available = state.questionPool.available;
-      if (available.length === 0) throw new Error('Question pool exhausted');
-      const questionId = pickRandom(available);
-      const newQuestion: QuestionPlay = {
-        questionId,
-        revealedAnswers: [],
-        strikesA: 0,
-        strikesB: 0,
-        activeTeamId: action.teamId,
-        pointsAwardedTo: null,
-        stealAttempted: false,
-        stealSuccessful: null,
-      };
+    case 'FACEOFF_BUZZ_IN': {
+      const next = setCurrentMatch(state, m => {
+        if (m.questions.length === 0) return m;
+        const questions = [...m.questions];
+        const last = { ...questions[questions.length - 1] };
+        last.faceOff = { ...last.faceOff, firstBuzzTeamId: action.teamId };
+        questions[questions.length - 1] = last;
+        return { ...m, questions };
+      });
       const snapshotBase = state.matchStartSnapshot ?? state;
-      const next = setCurrentMatch(state, m => ({
-        ...m,
-        questions: [...m.questions, newQuestion],
-      }));
+      return {
+        ...next,
+        matchStartSnapshot: snapshotBase,
+        actionStack: [...state.actionStack, action],
+        updatedAt: Date.now(),
+      };
+    }
+
+    case 'FACEOFF_FIRST_ANSWER': {
+      const next = setCurrentMatch(state, m => {
+        if (m.questions.length === 0) return m;
+        const questions = [...m.questions];
+        const lastIdx = questions.length - 1;
+        const q = { ...questions[lastIdx] };
+        const isTopAnswer = action.answerIndex === 0;
+        q.faceOff = {
+          ...q.faceOff,
+          firstAnswerIndex: action.answerIndex,
+          firstAnswerSubmitted: true,
+          winnerId: isTopAnswer ? q.faceOff.firstBuzzTeamId : q.faceOff.winnerId,
+        };
+        if (action.answerIndex !== null && !q.revealedAnswers.includes(action.answerIndex)) {
+          q.revealedAnswers = [...q.revealedAnswers, action.answerIndex];
+        }
+        questions[lastIdx] = q;
+        return { ...m, questions };
+      });
+      const snapshotBase = state.matchStartSnapshot ?? state;
+      return {
+        ...next,
+        matchStartSnapshot: snapshotBase,
+        actionStack: [...state.actionStack, action],
+        updatedAt: Date.now(),
+      };
+    }
+
+    case 'FACEOFF_SECOND_ANSWER': {
+      const next = setCurrentMatch(state, m => {
+        if (m.questions.length === 0) return m;
+        const questions = [...m.questions];
+        const lastIdx = questions.length - 1;
+        const q = { ...questions[lastIdx] };
+        const fo: FaceOff = {
+          ...q.faceOff,
+          secondAnswerIndex: action.answerIndex,
+          secondAnswerSubmitted: true,
+        };
+        fo.winnerId = resolveFaceOffWinner(fo, q.questionId, m);
+        q.faceOff = fo;
+        if (action.answerIndex !== null && !q.revealedAnswers.includes(action.answerIndex)) {
+          q.revealedAnswers = [...q.revealedAnswers, action.answerIndex];
+        }
+        questions[lastIdx] = q;
+        return { ...m, questions };
+      });
+      const snapshotBase = state.matchStartSnapshot ?? state;
+      return {
+        ...next,
+        matchStartSnapshot: snapshotBase,
+        actionStack: [...state.actionStack, action],
+        updatedAt: Date.now(),
+      };
+    }
+
+    case 'FACEOFF_ADJUDICATE': {
+      const next = setCurrentMatch(state, m => {
+        if (m.questions.length === 0) return m;
+        const questions = [...m.questions];
+        const lastIdx = questions.length - 1;
+        const q = { ...questions[lastIdx] };
+        q.faceOff = { ...q.faceOff, winnerId: action.winnerId };
+        questions[lastIdx] = q;
+        return { ...m, questions };
+      });
+      const snapshotBase = state.matchStartSnapshot ?? state;
+      return {
+        ...next,
+        matchStartSnapshot: snapshotBase,
+        actionStack: [...state.actionStack, action],
+        updatedAt: Date.now(),
+      };
+    }
+
+    case 'FACEOFF_KEEP':
+    case 'FACEOFF_PASS': {
+      const cur = getCurrentMatch(state);
+      if (!cur || cur.questions.length === 0 || !cur.teamBId) return state;
+      const lastIdx = cur.questions.length - 1;
+      const q = cur.questions[lastIdx];
+      const winnerId = q.faceOff.winnerId;
+      if (!winnerId) return state;
+      const otherTeamId = winnerId === cur.teamAId ? cur.teamBId : cur.teamAId;
+      const decision: 'keep' | 'pass' = action.type === 'FACEOFF_KEEP' ? 'keep' : 'pass';
+      const activeTeamId = decision === 'keep' ? winnerId : otherTeamId;
+      const next = setCurrentMatch(state, m => {
+        const questions = [...m.questions];
+        const lastQ = { ...questions[lastIdx] };
+        lastQ.faceOff = { ...lastQ.faceOff, decision };
+        lastQ.activeTeamId = activeTeamId;
+        questions[lastIdx] = lastQ;
+        return { ...m, questions };
+      });
+      const snapshotBase = state.matchStartSnapshot ?? state;
       return {
         ...next,
         matchStartSnapshot: snapshotBase,
         currentMatchState: 'board_play',
-        questionPool: {
-          used: [...state.questionPool.used, questionId],
-          available: available.filter(id => id !== questionId),
-        },
         actionStack: [...state.actionStack, action],
         updatedAt: Date.now(),
       };
@@ -256,12 +442,21 @@ export function reducer(state: TournamentState, action: Action): TournamentState
         bracket.final = { teamAId: finA, teamBId: finB, questions: [], scoreA: 0, scoreB: 0, winnerId: null };
       }
 
+      let nextBracket = bracket;
+      let nextPool = state.questionPool;
+      if (next) {
+        const pick = pickFaceOffQuestion(state);
+        nextBracket = seedMatchQuestion(bracket, next, createInitialQuestionPlay(pick.questionId));
+        nextPool = { used: pick.used, available: pick.available };
+      }
+
       return {
         ...state,
-        bracket,
+        bracket: nextBracket,
         currentMatchPath: next,
         currentMatchState: next ? 'face_off' : 'match_over',
         status: next ? 'in_progress' : 'done',
+        questionPool: nextPool,
         actionStack: [],
         matchStartSnapshot: null,
         updatedAt: Date.now(),
@@ -283,14 +478,34 @@ export function reducer(state: TournamentState, action: Action): TournamentState
       return { ...state, projectorView: action.view, updatedAt: Date.now() };
 
     case 'SKIP_QUESTION': {
-      const next = setCurrentMatch(state, m => {
-        const questions = m.questions.slice(0, -1);
-        return { ...m, questions };
-      });
+      const pick = pickFaceOffQuestion(state);
+      const fresh = createInitialQuestionPlay(pick.questionId);
+      const next = setCurrentMatch(state, m => ({
+        ...m,
+        questions: [...m.questions.slice(0, -1), fresh],
+      }));
       return {
         ...next,
         currentMatchState: 'face_off',
+        questionPool: { used: pick.used, available: pick.available },
         actionStack: state.actionStack.slice(0, -1),
+        updatedAt: Date.now(),
+      };
+    }
+
+    case 'PLAY_ANOTHER_QUESTION': {
+      const pick = pickFaceOffQuestion(state);
+      const fresh = createInitialQuestionPlay(pick.questionId);
+      const next = setCurrentMatch(state, m => ({
+        ...m,
+        questions: [...m.questions, fresh],
+      }));
+      return {
+        ...next,
+        currentMatchState: 'face_off',
+        questionPool: { used: pick.used, available: pick.available },
+        actionStack: [],
+        matchStartSnapshot: null,
         updatedAt: Date.now(),
       };
     }
@@ -324,7 +539,7 @@ export function reducer(state: TournamentState, action: Action): TournamentState
     }
 
     case 'HYDRATE':
-      return action.state;
+      return migrateHydratedState(action.state);
 
     default:
       return state;

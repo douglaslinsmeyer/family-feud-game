@@ -36,18 +36,22 @@ describe('currentQuestion', () => {
     expect(currentQuestion(s)).toBeNull();
   });
 
-  it('returns null when match has no questions yet', () => {
+  it('returns the freshly-picked face-off question after START_TOURNAMENT', () => {
     const s = startedTournament();
-    expect(currentQuestion(s)).toBeNull();
+    const result = currentQuestion(s);
+    expect(result).not.toBeNull();
+    expect(result!.play.activeTeamId).toBeNull();
+    expect(result!.def.answers).toHaveLength(5);
   });
 
-  it('returns the active play and its definition after face-off', () => {
+  it('returns the active play after the face-off resolves', () => {
     let s = startedTournament();
-    s = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: 'a' });
+    s = reducer(s, { type: 'FACEOFF_BUZZ_IN', teamId: 'a' });
+    s = reducer(s, { type: 'FACEOFF_FIRST_ANSWER', answerIndex: 0 });
+    s = reducer(s, { type: 'FACEOFF_KEEP' });
     const result = currentQuestion(s);
     expect(result).not.toBeNull();
     expect(result!.play.activeTeamId).toBe('a');
-    expect(result!.def.answers).toHaveLength(5);
   });
 });
 
@@ -57,18 +61,19 @@ describe('canAdvanceMatch', () => {
     expect(canAdvanceMatch(s)).toBe(false);
   });
 
-  it('returns false when scores are tied', () => {
-    // board_play with no points awarded yet
+  it('returns false in board_play with tied scores', () => {
     let s = startedTournament();
-    s = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: 'a' });
-    // Force scores to be equal (they start at 0,0)
+    s = reducer(s, { type: 'FACEOFF_BUZZ_IN', teamId: 'a' });
+    s = reducer(s, { type: 'FACEOFF_FIRST_ANSWER', answerIndex: 0 });
+    s = reducer(s, { type: 'FACEOFF_KEEP' });
     expect(canAdvanceMatch(s)).toBe(false);
   });
 
   it('returns true after AWARD_POINTS_TO_ACTIVE with non-zero score', () => {
     let s = startedTournament();
-    s = reducer(s, { type: 'RESOLVE_FACE_OFF', teamId: 'a' });
-    s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 0 });
+    s = reducer(s, { type: 'FACEOFF_BUZZ_IN', teamId: 'a' });
+    s = reducer(s, { type: 'FACEOFF_FIRST_ANSWER', answerIndex: 0 });
+    s = reducer(s, { type: 'FACEOFF_KEEP' });
     s = reducer(s, { type: 'AWARD_POINTS_TO_ACTIVE' });
     expect(s.currentMatchState).toBe('awarded');
     expect(canAdvanceMatch(s)).toBe(true);

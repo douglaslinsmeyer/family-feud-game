@@ -26,6 +26,25 @@
   flex-shrink: 0;
 }
 
+.gm-faceoff-tag {
+  display: inline-block;
+  margin-left: 14px;
+  padding: 2px 10px;
+  font-size: 0.55em;
+  letter-spacing: 4px;
+  color: var(--gold);
+  border: 1.5px solid var(--gold);
+  border-radius: 3px;
+  vertical-align: middle;
+  text-shadow: none;
+  animation: gm-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes gm-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px rgba(255, 215, 0, 0.4); }
+  50%      { opacity: 0.6; box-shadow: 0 0 14px rgba(255, 215, 0, 0.8); }
+}
+
 .gm-board {
   flex: 1;
   display: grid;

@@ -58,7 +58,7 @@ export function AdminView() {
           <span className="dot" />
           {state.status === 'setup'
             ? 'Setup mode — enter team names to begin'
-            : `State saved · ${state.questionPool.used.length} questions used · ${state.questionPool.available.length} remaining`}
+            : `State saved · ${state.questionPool.used.length} used · ${state.questionPool.available.length} remaining (+${state.fastMoneyPool.available.length} Fast Money)`}
         </div>
         <button
           className="adm-undo"

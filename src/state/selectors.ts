@@ -30,3 +30,23 @@ export function matchOverWinningTeamId(state: TournamentState): string | null {
   if (m.scoreA === m.scoreB) return null;
   return m.scoreA > m.scoreB ? m.teamAId : m.teamBId;
 }
+
+export type FaceOffStage =
+  | 'awaiting_buzz'
+  | 'awaiting_first_answer'
+  | 'awaiting_second_answer'
+  | 'awaiting_adjudication'
+  | 'awaiting_decision'
+  | 'complete';
+
+export function faceOffStage(state: TournamentState): FaceOffStage {
+  const m = getCurrentMatch(state);
+  if (!m || m.questions.length === 0) return 'awaiting_buzz';
+  const fo = m.questions[m.questions.length - 1].faceOff;
+  if (fo.decision !== null) return 'complete';
+  if (fo.winnerId !== null) return 'awaiting_decision';
+  if (!fo.firstBuzzTeamId) return 'awaiting_buzz';
+  if (!fo.firstAnswerSubmitted) return 'awaiting_first_answer';
+  if (!fo.secondAnswerSubmitted) return 'awaiting_second_answer';
+  return 'awaiting_adjudication';
+}

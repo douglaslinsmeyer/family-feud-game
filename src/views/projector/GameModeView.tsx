@@ -73,6 +73,9 @@ export function GameModeView({ state }: { state: TournamentState }) {
 
       <div className="gm-q-large">
         {def?.prompt ?? 'Waiting for face-off…'}
+        {state.currentMatchState === 'face_off' && (
+          <span className="gm-faceoff-tag">FACE-OFF</span>
+        )}
       </div>
 
       <div className="gm-board">
@@ -99,9 +102,10 @@ export function GameModeView({ state }: { state: TournamentState }) {
           <span className="score">{m.scoreA}</span>
         </div>
         <div className="gm-strikes">
-          {[0, 1, 2].map(i => (
-            <span key={i} className={`x ${i < (strikes ?? 0) ? '' : 'dim'}`}>X</span>
-          ))}
+          {state.currentMatchState !== 'face_off' &&
+            [0, 1, 2].map(i => (
+              <span key={i} className={`x ${i < (strikes ?? 0) ? '' : 'dim'}`}>X</span>
+            ))}
         </div>
         <div className={`gm-team ${!activeIsA ? 'active' : ''} ${winnerTeamId === m.teamBId ? 'match-winner' : ''}`}>
           <span className="name">{b?.name}</span>

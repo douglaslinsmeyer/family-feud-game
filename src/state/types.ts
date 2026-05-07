@@ -6,8 +6,19 @@ export type Team = {
   members: string[];
 };
 
+export type FaceOff = {
+  firstBuzzTeamId: string | null;
+  firstAnswerIndex: number | null;
+  firstAnswerSubmitted: boolean;
+  secondAnswerIndex: number | null;
+  secondAnswerSubmitted: boolean;
+  winnerId: string | null;
+  decision: 'keep' | 'pass' | null;
+};
+
 export type QuestionPlay = {
   questionId: string;
+  faceOff: FaceOff;
   revealedAnswers: number[];   // indices 0..4
   strikesA: number;
   strikesB: number;
@@ -61,7 +72,12 @@ export type ProjectorView = 'game' | 'bracket';
 export type Action =
   | { type: 'SET_TEAMS'; teams: Team[] }
   | { type: 'START_TOURNAMENT' }
-  | { type: 'RESOLVE_FACE_OFF'; teamId: string }
+  | { type: 'FACEOFF_BUZZ_IN'; teamId: string }
+  | { type: 'FACEOFF_FIRST_ANSWER'; answerIndex: number | null }
+  | { type: 'FACEOFF_SECOND_ANSWER'; answerIndex: number | null }
+  | { type: 'FACEOFF_ADJUDICATE'; winnerId: string }
+  | { type: 'FACEOFF_KEEP' }
+  | { type: 'FACEOFF_PASS' }
   | { type: 'REVEAL_ANSWER'; answerIndex: number }
   | { type: 'MARK_STRIKE' }
   | { type: 'CLEAR_STRIKES' }
@@ -71,6 +87,7 @@ export type Action =
   | { type: 'START_STEAL' }
   | { type: 'RESOLVE_STEAL'; successful: boolean }
   | { type: 'SKIP_QUESTION' }
+  | { type: 'PLAY_ANOTHER_QUESTION' }
   | { type: 'ADVANCE_MATCH' }
   | { type: 'SUBMIT_FM_ANSWER'; player: 1 | 2; answer: FastMoneyAnswer }
   | { type: 'COMPLETE_FAST_MONEY' }

@@ -141,10 +141,10 @@ export function BracketView({ state }: { state: TournamentState }) {
             {/* Wildcard slot */}
             <div className="brk-match wildcard">
               <span className="brk-match-label">Wild Card</span>
-              <div className="brk-wc-content">
-                <div className="row1">★ WILD CARD ★</div>
-                <div className="row2">{wcTeamName ?? '—'}</div>
-                <div className="row3">{wildcard.score != null ? `${wildcard.score} pts` : 'TBD'}</div>
+              <div className="brk-wc-row brk-wc-banner">★ WILD CARD ★</div>
+              <div className="brk-wc-row brk-wc-team">
+                <span className="name">{wcTeamName ?? '—'}</span>
+                <span className="score">{wildcard.score != null ? wildcard.score : '—'}</span>
               </div>
             </div>
           </div>

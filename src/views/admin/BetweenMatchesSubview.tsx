@@ -48,7 +48,7 @@ export function BetweenMatchesSubview() {
         <button
           className="adm-btn"
           style={{ padding: '10px 20px', fontSize: 13 }}
-          onClick={() => dispatch({ type: 'RESOLVE_FACE_OFF', teamId: match.teamAId })}
+          onClick={() => dispatch({ type: 'PLAY_ANOTHER_QUESTION' })}
         >
           Play Another Question
         </button>
