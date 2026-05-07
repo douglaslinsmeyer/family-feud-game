@@ -85,7 +85,7 @@ export type Action =
   | { type: 'AWARD_POINTS_TO_ACTIVE' }
   | { type: 'AWARD_POINTS_TO_OPPONENT' }
   | { type: 'START_STEAL' }
-  | { type: 'RESOLVE_STEAL'; successful: boolean }
+  | { type: 'RESOLVE_STEAL'; successful: boolean; answerIndex?: number }
   | { type: 'SKIP_QUESTION' }
   | { type: 'PLAY_ANOTHER_QUESTION' }
   | { type: 'ADVANCE_MATCH' }

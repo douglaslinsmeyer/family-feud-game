@@ -90,6 +90,15 @@ function seedMatchQuestion(
   return bracket;
 }
 
+function withAllAnswersRevealed(q: QuestionPlay): QuestionPlay {
+  const def = QUESTIONS.find(d => d.id === q.questionId);
+  if (!def) return q;
+  const all = def.answers.map((_, i) => i);
+  const merged = [...q.revealedAnswers];
+  for (const i of all) if (!merged.includes(i)) merged.push(i);
+  return { ...q, revealedAnswers: merged };
+}
+
 function migrateHydratedState(s: TournamentState): TournamentState {
   const migrateQ = (q: QuestionPlay): QuestionPlay =>
     q.faceOff ? q : { ...q, faceOff: emptyFaceOff() };
@@ -352,7 +361,10 @@ export function reducer(state: TournamentState, action: Action): TournamentState
       const isA = q.activeTeamId === cur.teamAId;
       const next = setCurrentMatch(state, m => {
         const questions = [...m.questions];
-        const lastQ = { ...questions[questions.length - 1], pointsAwardedTo: q.activeTeamId };
+        const lastQ = withAllAnswersRevealed({
+          ...questions[questions.length - 1],
+          pointsAwardedTo: q.activeTeamId,
+        });
         questions[questions.length - 1] = lastQ;
         return {
           ...m,
@@ -374,18 +386,24 @@ export function reducer(state: TournamentState, action: Action): TournamentState
       if (!cur || cur.questions.length === 0 || !cur.teamBId) return state;
       const q = cur.questions[cur.questions.length - 1];
       if (!q.activeTeamId) return state;
-      const pts = pointsForQuestion(q);
       const opponentId = q.activeTeamId === cur.teamAId ? cur.teamBId : cur.teamAId;
       const winnerOfQuestion = action.successful ? opponentId : q.activeTeamId;
-      const isA = winnerOfQuestion === cur.teamAId;
       const next = setCurrentMatch(state, m => {
         const questions = [...m.questions];
-        const lastQ = {
-          ...questions[questions.length - 1],
-          stealAttempted: true,
-          stealSuccessful: action.successful,
-          pointsAwardedTo: winnerOfQuestion,
-        };
+        let lastQ: QuestionPlay = { ...questions[questions.length - 1] };
+        if (
+          action.successful &&
+          action.answerIndex !== undefined &&
+          !lastQ.revealedAnswers.includes(action.answerIndex)
+        ) {
+          lastQ.revealedAnswers = [...lastQ.revealedAnswers, action.answerIndex];
+        }
+        lastQ.stealAttempted = true;
+        lastQ.stealSuccessful = action.successful;
+        lastQ.pointsAwardedTo = winnerOfQuestion;
+        const pts = pointsForQuestion(lastQ);
+        const isA = winnerOfQuestion === m.teamAId;
+        lastQ = withAllAnswersRevealed(lastQ);
         questions[questions.length - 1] = lastQ;
         return {
           ...m,

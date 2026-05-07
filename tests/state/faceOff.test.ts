@@ -295,6 +295,112 @@ describe('face-off: HYDRATE migration', () => {
   });
 });
 
+// ── Steal with click-to-reveal answer ────────────────────────────────────────
+
+describe('steal: click-to-reveal', () => {
+  function reachSteal(): TournamentState {
+    let s = startedTournament();
+    s = reducer(s, { type: 'FACEOFF_BUZZ_IN', teamId: 'a' });
+    s = reducer(s, { type: 'FACEOFF_FIRST_ANSWER', answerIndex: 0 });
+    s = reducer(s, { type: 'FACEOFF_KEEP' });
+    // Reveal a couple of answers, then strike out
+    s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 1 });
+    s = reducer(s, { type: 'MARK_STRIKE' });
+    s = reducer(s, { type: 'MARK_STRIKE' });
+    s = reducer(s, { type: 'MARK_STRIKE' });
+    return s;
+  }
+
+  it('successful steal with answerIndex reveals the answer and awards all points to the stealer', () => {
+    let s = reachSteal();
+    expect(s.currentMatchState).toBe('steal');
+    const q = currentQuestion(s);
+    const def = questionDef(q.questionId);
+    s = reducer(s, { type: 'RESOLVE_STEAL', successful: true, answerIndex: 2 });
+    const m = s.bracket.round1[0];
+    const lastQ = m.questions[m.questions.length - 1];
+    expect(lastQ.revealedAnswers).toContain(2);
+    const expected =
+      def.answers[0].points + def.answers[1].points + def.answers[2].points;
+    expect(m.scoreB).toBe(expected);
+    expect(m.scoreA).toBe(0);
+    expect(s.currentMatchState).toBe('awarded');
+  });
+
+  it('successful steal without answerIndex still awards (back-compat)', () => {
+    let s = reachSteal();
+    s = reducer(s, { type: 'RESOLVE_STEAL', successful: true });
+    const m = s.bracket.round1[0];
+    expect(m.scoreB).toBeGreaterThan(0);
+    expect(s.currentMatchState).toBe('awarded');
+  });
+
+  it('failed steal awards score to original team and marks the attempt', () => {
+    let s = reachSteal();
+    s = reducer(s, { type: 'RESOLVE_STEAL', successful: false });
+    const lastQ = currentQuestion(s);
+    expect(lastQ.stealAttempted).toBe(true);
+    expect(lastQ.stealSuccessful).toBe(false);
+    const m = s.bracket.round1[0];
+    expect(m.scoreA).toBeGreaterThan(0);
+    expect(m.scoreB).toBe(0);
+  });
+});
+
+// ── Courtesy board reveal after the question ends ───────────────────────────
+
+describe('courtesy reveal after question ends', () => {
+  it('AWARD_POINTS_TO_ACTIVE flips all remaining answers but does not change the score', () => {
+    let s = startedTournament();
+    s = reducer(s, { type: 'FACEOFF_BUZZ_IN', teamId: 'a' });
+    s = reducer(s, { type: 'FACEOFF_FIRST_ANSWER', answerIndex: 0 });
+    s = reducer(s, { type: 'FACEOFF_KEEP' });
+    s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 1 });
+    s = reducer(s, { type: 'AWARD_POINTS_TO_ACTIVE' });
+    const q = currentQuestion(s);
+    const def = questionDef(q.questionId);
+    expect(q.revealedAnswers.sort()).toEqual([0, 1, 2, 3, 4]);
+    // Score is the SUM of answers revealed BEFORE the award (0 + 1), not all 5.
+    const expected = def.answers[0].points + def.answers[1].points;
+    expect(s.bracket.round1[0].scoreA).toBe(expected);
+  });
+
+  it('RESOLVE_STEAL successful flips remaining answers, score includes the steal answer', () => {
+    let s = startedTournament();
+    s = reducer(s, { type: 'FACEOFF_BUZZ_IN', teamId: 'a' });
+    s = reducer(s, { type: 'FACEOFF_FIRST_ANSWER', answerIndex: 0 });
+    s = reducer(s, { type: 'FACEOFF_KEEP' });
+    s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 1 });
+    s = reducer(s, { type: 'MARK_STRIKE' });
+    s = reducer(s, { type: 'MARK_STRIKE' });
+    s = reducer(s, { type: 'MARK_STRIKE' });
+    s = reducer(s, { type: 'RESOLVE_STEAL', successful: true, answerIndex: 2 });
+    const q = currentQuestion(s);
+    const def = questionDef(q.questionId);
+    expect(q.revealedAnswers.sort()).toEqual([0, 1, 2, 3, 4]);
+    const expected =
+      def.answers[0].points + def.answers[1].points + def.answers[2].points;
+    expect(s.bracket.round1[0].scoreB).toBe(expected);
+  });
+
+  it('RESOLVE_STEAL failed flips remaining answers, score is original team\'s reveals only', () => {
+    let s = startedTournament();
+    s = reducer(s, { type: 'FACEOFF_BUZZ_IN', teamId: 'a' });
+    s = reducer(s, { type: 'FACEOFF_FIRST_ANSWER', answerIndex: 0 });
+    s = reducer(s, { type: 'FACEOFF_KEEP' });
+    s = reducer(s, { type: 'REVEAL_ANSWER', answerIndex: 1 });
+    s = reducer(s, { type: 'MARK_STRIKE' });
+    s = reducer(s, { type: 'MARK_STRIKE' });
+    s = reducer(s, { type: 'MARK_STRIKE' });
+    s = reducer(s, { type: 'RESOLVE_STEAL', successful: false });
+    const q = currentQuestion(s);
+    const def = questionDef(q.questionId);
+    expect(q.revealedAnswers.sort()).toEqual([0, 1, 2, 3, 4]);
+    const expected = def.answers[0].points + def.answers[1].points;
+    expect(s.bracket.round1[0].scoreA).toBe(expected);
+  });
+});
+
 // ── pointsForQuestion regression: face-off reveals contribute to award ──────
 
 describe('face-off: scoring', () => {
