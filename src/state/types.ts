@@ -97,7 +97,7 @@ export type Action =
   | { type: 'UNDO' }
   | { type: 'HYDRATE'; state: TournamentState };
 
-export type StackedAction = Exclude<Action, { type: 'UNDO' } | { type: 'HYDRATE' }>;
+export type StackedAction = Exclude<Action, { type: 'UNDO' } | { type: 'HYDRATE' } | { type: 'RESET_GAME' } | { type: 'RESTART_GAME' }>;
 
 export type TournamentState = {
   tournamentId: string;
