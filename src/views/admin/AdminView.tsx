@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { getCurrentMatch } from '../../state/bracketLogic';
+import { adminBodyKind } from '../../state/selectors';
 import { SetupSubview } from './SetupSubview';
 import { InMatchSubview } from './InMatchSubview';
 import { FaceOffSubview } from './FaceOffSubview';
@@ -25,13 +26,14 @@ export function AdminView() {
     { combo: 'b', handler: () => dispatch({ type: 'SET_PROJECTOR_VIEW', view: 'bracket' }), description: 'Show bracket on projector' },
   ]);
 
-  let body;
-  if (state.status === 'setup') body = <SetupSubview />;
-  else if (state.currentMatchPath?.round === 'final' && state.currentMatchState === 'match_over') body = <FastMoneySubview />;
-  else if (state.currentMatchState === 'face_off') body = <FaceOffSubview />;
-  else if (state.currentMatchState === 'steal') body = <StealSubview />;
-  else if (state.currentMatchState === 'awarded') body = <BetweenMatchesSubview />;
-  else body = <InMatchSubview />;
+  const bodyKind = adminBodyKind(state);
+  const body =
+    bodyKind === 'setup' ? <SetupSubview />
+    : bodyKind === 'fastMoney' ? <FastMoneySubview />
+    : bodyKind === 'faceOff' ? <FaceOffSubview />
+    : bodyKind === 'steal' ? <StealSubview />
+    : bodyKind === 'between' ? <BetweenMatchesSubview />
+    : <InMatchSubview />;
 
   const roundLabel = (() => {
     if (!state.currentMatchPath) return '';

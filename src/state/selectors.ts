@@ -31,6 +31,17 @@ export function matchOverWinningTeamId(state: TournamentState): string | null {
   return m.scoreA > m.scoreB ? m.teamAId : m.teamBId;
 }
 
+export type AdminBodyKind = 'setup' | 'fastMoney' | 'faceOff' | 'steal' | 'between' | 'inMatch';
+
+export function adminBodyKind(state: TournamentState): AdminBodyKind {
+  if (state.status === 'setup') return 'setup';
+  if (state.status === 'done') return 'fastMoney';
+  if (state.currentMatchState === 'face_off') return 'faceOff';
+  if (state.currentMatchState === 'steal') return 'steal';
+  if (state.currentMatchState === 'awarded') return 'between';
+  return 'inMatch';
+}
+
 export type FaceOffStage =
   | 'awaiting_buzz'
   | 'awaiting_first_answer'

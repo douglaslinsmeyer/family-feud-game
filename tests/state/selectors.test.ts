@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { teamById, currentQuestion, canAdvanceMatch } from '../../src/state/selectors';
+import { teamById, currentQuestion, canAdvanceMatch, adminBodyKind } from '../../src/state/selectors';
 import { initialState } from '../../src/state/initialState';
 import { reducer } from '../../src/state/reducer';
 
@@ -77,5 +77,56 @@ describe('canAdvanceMatch', () => {
     s = reducer(s, { type: 'AWARD_POINTS_TO_ACTIVE' });
     expect(s.currentMatchState).toBe('awarded');
     expect(canAdvanceMatch(s)).toBe(true);
+  });
+});
+
+describe('adminBodyKind', () => {
+  it('returns "setup" while status is setup', () => {
+    expect(adminBodyKind(initialState())).toBe('setup');
+  });
+
+  it('returns "faceOff" right after START_TOURNAMENT', () => {
+    expect(adminBodyKind(startedTournament())).toBe('faceOff');
+  });
+
+  it('returns "fastMoney" once the tournament is done (after the final\'s ADVANCE_MATCH)', () => {
+    // Simulate the post-final state directly: status=done, currentMatchPath=null,
+    // currentMatchState=match_over. This is exactly what ADVANCE_MATCH produces
+    // when nextMatchPath('final') returns null.
+    const s = {
+      ...startedTournament(),
+      status: 'done' as const,
+      currentMatchPath: null,
+      currentMatchState: 'match_over' as const,
+    };
+    expect(adminBodyKind(s)).toBe('fastMoney');
+  });
+
+  it('returns "steal" during a steal opportunity', () => {
+    let s = startedTournament();
+    s = reducer(s, { type: 'FACEOFF_BUZZ_IN', teamId: 'a' });
+    s = reducer(s, { type: 'FACEOFF_FIRST_ANSWER', answerIndex: 0 });
+    s = reducer(s, { type: 'FACEOFF_KEEP' });
+    s = reducer(s, { type: 'MARK_STRIKE' });
+    s = reducer(s, { type: 'MARK_STRIKE' });
+    s = reducer(s, { type: 'MARK_STRIKE' });
+    expect(adminBodyKind(s)).toBe('steal');
+  });
+
+  it('returns "between" after AWARD_POINTS_TO_ACTIVE', () => {
+    let s = startedTournament();
+    s = reducer(s, { type: 'FACEOFF_BUZZ_IN', teamId: 'a' });
+    s = reducer(s, { type: 'FACEOFF_FIRST_ANSWER', answerIndex: 0 });
+    s = reducer(s, { type: 'FACEOFF_KEEP' });
+    s = reducer(s, { type: 'AWARD_POINTS_TO_ACTIVE' });
+    expect(adminBodyKind(s)).toBe('between');
+  });
+
+  it('returns "inMatch" during board play', () => {
+    let s = startedTournament();
+    s = reducer(s, { type: 'FACEOFF_BUZZ_IN', teamId: 'a' });
+    s = reducer(s, { type: 'FACEOFF_FIRST_ANSWER', answerIndex: 0 });
+    s = reducer(s, { type: 'FACEOFF_KEEP' });
+    expect(adminBodyKind(s)).toBe('inMatch');
   });
 });
