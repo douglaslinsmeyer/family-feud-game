@@ -1,0 +1,14 @@
+:root {
+  --bg-deep: #061236;
+  --bg-mid:  #0a1d4f;
+  --bg-card: #0d2470;
+  --gold:    #ffd700;
+  --gold-2:  #ffaa00;
+  --gold-dim: rgba(255, 215, 0, 0.45);
+  --red:     #cc0000;
+  --purple:  #b86bff;
+  --purple-deep: #7a2bd6;
+  --white:   #ffffff;
+  --green:   #2dc06b;
+  --text-secondary: rgba(255, 255, 255, 0.65);
+}
