@@ -1,0 +1,82 @@
+.confirm-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  font-family: 'Inter', sans-serif;
+}
+
+.confirm-modal {
+  background: linear-gradient(180deg, #0a1d4f 0%, #061236 100%);
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 24px rgba(255, 215, 0, 0.15);
+  padding: 24px 28px;
+  max-width: 460px;
+  width: 90%;
+  color: #fff;
+}
+
+.confirm-modal-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 2.5px;
+  color: var(--gold);
+  text-shadow: 0 0 6px var(--gold);
+  margin: 0 0 14px 0;
+}
+
+.confirm-modal-body {
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 22px;
+}
+
+.confirm-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.confirm-modal-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.confirm-modal-cancel {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+.confirm-modal-cancel:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.confirm-modal-confirm {
+  background: #6b1a1a;
+  border-color: #9e2d2d;
+  color: #fff;
+}
+
+.confirm-modal-confirm:hover {
+  background: #8a2424;
+  box-shadow: 0 0 12px rgba(204, 0, 0, 0.4);
+}
+
+.confirm-modal-cancel:focus-visible,
+.confirm-modal-confirm:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
