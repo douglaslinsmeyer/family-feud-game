@@ -1,6 +1,7 @@
 import type { TournamentState, Action, Match, QuestionPlay, FaceOff, MatchPath } from './types';
 import { getCurrentMatch, pickRandom, computeWildcard, nextMatchPath } from './bracketLogic';
 import { QUESTIONS } from '../content/questions';
+import { initialState } from './initialState';
 
 function emptyMatch(teamAId: string, teamBId: string | null): Match {
   return {
@@ -145,6 +146,17 @@ function pointsForQuestion(q: QuestionPlay): number {
 function determineWinner(m: Match): string | null {
   if (m.scoreA === m.scoreB) return null;
   return m.scoreA > m.scoreB ? m.teamAId : (m.teamBId ?? null);
+}
+
+function freshState(prev: TournamentState, opts: { keepTeams: boolean }): TournamentState {
+  const fresh = initialState();
+  return {
+    ...fresh,
+    tournamentId: prev.tournamentId,
+    createdAt: prev.createdAt,
+    teams: opts.keepTeams ? prev.teams : [],
+    updatedAt: Date.now(),
+  };
 }
 
 export function reducer(state: TournamentState, action: Action): TournamentState {
@@ -480,6 +492,12 @@ export function reducer(state: TournamentState, action: Action): TournamentState
         updatedAt: Date.now(),
       };
     }
+
+    case 'RESET_GAME':
+      return freshState(state, { keepTeams: false });
+
+    case 'RESTART_GAME':
+      return freshState(state, { keepTeams: true });
 
     case 'UNDO': {
       const snap = state.matchStartSnapshot;
