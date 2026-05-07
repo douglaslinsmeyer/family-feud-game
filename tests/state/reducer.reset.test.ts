@@ -25,6 +25,7 @@ describe('reducer: RESET_GAME', () => {
     expect(after.bracket.final).toBeNull();
     expect(after.bracket.fastMoney).toBeNull();
     expect(after.bracket.champion).toBeNull();
+    expect(after.bracket.wildcard).toEqual({ teamId: null, score: null });
     expect(after.currentMatchPath).toBeNull();
     expect(after.currentMatchState).toBe('face_off');
     expect(after.actionStack).toEqual([]);
@@ -36,7 +37,7 @@ describe('reducer: RESET_GAME', () => {
     const before = midTournament();
     const earlier = before.updatedAt;
     const after = reducer({ ...before, updatedAt: earlier - 1000 }, { type: 'RESET_GAME' });
-    expect(after.updatedAt).toBeGreaterThanOrEqual(earlier - 1000);
+    expect(after.updatedAt).toBeGreaterThanOrEqual(earlier);
   });
 
   it('restores a full question pool', () => {
@@ -82,5 +83,7 @@ describe('reducer: RESTART_GAME', () => {
     const after = reducer(before, { type: 'RESTART_GAME' });
     expect(after.questionPool.used).toEqual([]);
     expect(after.fastMoneyPool.used).toEqual([]);
+    expect(after.questionPool.available.length).toBe(initialState().questionPool.available.length);
+    expect(after.fastMoneyPool.available.length).toBe(initialState().fastMoneyPool.available.length);
   });
 });
