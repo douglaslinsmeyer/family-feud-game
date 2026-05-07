@@ -8,11 +8,22 @@ const EMPTY_TEAM = (i: number): Team => ({
   members: ['', '', '', '', ''],
 });
 
+function seedTeams(saved: Team[]): Team[] {
+  if (saved.length !== 6) {
+    return Array.from({ length: 6 }, (_, i) => EMPTY_TEAM(i));
+  }
+  // Backfill members to length 5 so the existing 5-input UI keeps working
+  // even if a saved team had fewer members recorded.
+  return saved.map(t => {
+    const padded = [...t.members];
+    while (padded.length < 5) padded.push('');
+    return { ...t, members: padded.slice(0, 5) };
+  });
+}
+
 export function SetupSubview() {
-  const { dispatch } = useGameState();
-  const [teams, setTeams] = useState<Team[]>(
-    Array.from({ length: 6 }, (_, i) => EMPTY_TEAM(i)),
-  );
+  const { state, dispatch } = useGameState();
+  const [teams, setTeams] = useState<Team[]>(() => seedTeams(state.teams));
 
   function update(i: number, patch: Partial<Team>) {
     setTeams(ts => ts.map((t, idx) => (idx === i ? { ...t, ...patch } : t)));

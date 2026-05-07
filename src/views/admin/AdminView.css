@@ -430,6 +430,25 @@
   font-size: 9px;
 }
 
+.adm-danger-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.adm-danger-btn:hover {
+  background: rgba(255, 119, 119, 0.12);
+  border-color: rgba(255, 119, 119, 0.5);
+  color: #ff9999;
+}
+
 /* ===== SETUP SUBVIEW ===== */
 .adm-setup {
   max-width: 960px;

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { getCurrentMatch } from '../../state/bracketLogic';
 import { SetupSubview } from './SetupSubview';
@@ -7,12 +8,16 @@ import { StealSubview } from './StealSubview';
 import { BetweenMatchesSubview } from './BetweenMatchesSubview';
 import { FastMoneySubview } from './FastMoneySubview';
 import { ViewSwitcher } from '../../components/ViewSwitcher';
+import { ConfirmDangerModal } from '../../components/ConfirmDangerModal';
 import { useHotkeys } from '../../hooks/useHotkeys';
 import './AdminView.css';
+
+type DangerModal = 'reset' | 'restart' | null;
 
 export function AdminView() {
   const { state, dispatch } = useGameState();
   const match = getCurrentMatch(state);
+  const [danger, setDanger] = useState<DangerModal>(null);
 
   useHotkeys([
     { combo: 'mod+z', handler: () => dispatch({ type: 'UNDO' }), description: 'Undo last action' },
@@ -28,7 +33,6 @@ export function AdminView() {
   else if (state.currentMatchState === 'awarded') body = <BetweenMatchesSubview />;
   else body = <InMatchSubview />;
 
-  // Build match context string for topbar
   const roundLabel = (() => {
     if (!state.currentMatchPath) return '';
     const p = state.currentMatchPath;
@@ -40,6 +44,8 @@ export function AdminView() {
 
   const teamA = match ? state.teams.find(t => t.id === match.teamAId) : null;
   const teamB = match?.teamBId ? state.teams.find(t => t.id === match.teamBId) : null;
+
+  const showRestart = state.teams.length > 0;
 
   return (
     <div className="adm-stage">
@@ -68,7 +74,46 @@ export function AdminView() {
         >
           ↶ Undo <span className="key">⌘Z</span>
         </button>
+        {showRestart && (
+          <button
+            type="button"
+            className="adm-danger-btn"
+            onClick={() => setDanger('restart')}
+          >
+            Restart
+          </button>
+        )}
+        <button
+          type="button"
+          className="adm-danger-btn"
+          onClick={() => setDanger('reset')}
+        >
+          Reset
+        </button>
       </footer>
+
+      <ConfirmDangerModal
+        open={danger === 'reset'}
+        title="Reset tournament?"
+        body="Everything will be cleared: teams, scores, bracket, and question history. This cannot be undone."
+        confirmLabel="Reset tournament"
+        onCancel={() => setDanger(null)}
+        onConfirm={() => {
+          dispatch({ type: 'RESET_GAME' });
+          setDanger(null);
+        }}
+      />
+      <ConfirmDangerModal
+        open={danger === 'restart'}
+        title="Restart tournament?"
+        body="Scores, bracket, and question history will be cleared. Team names will be kept. This cannot be undone."
+        confirmLabel="Restart tournament"
+        onCancel={() => setDanger(null)}
+        onConfirm={() => {
+          dispatch({ type: 'RESTART_GAME' });
+          setDanger(null);
+        }}
+      />
     </div>
   );
 }
