@@ -26,7 +26,7 @@ jobs:
       - run: npx tsc -b
       - run: npm run test:run
       - working-directory: infra
-        run: npm ci && npx cdk synth
+        run: npm ci && npx jest && npx cdk synth
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
