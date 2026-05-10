@@ -77,6 +77,15 @@ describe('FastMoneySubview: threshold input', () => {
     expect(input.value).toBe('155');
   });
 
+  it('clearing the input does not snap the threshold to MIN', async () => {
+    await renderWithSeed(fmEntryState(175));
+    const input = await screen.findByLabelText(/win at/i) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '' } });
+    // After clearing, the controlled value bounces back to 175 (state unchanged).
+    // The reducer never received a dispatch with value 0.
+    expect(input.value).toBe('175');
+  });
+
   it('replaces the input with locked text once FM is completed', async () => {
     await renderWithSeed(fmCompletedState(180, 100));
     // Wait for async state hydration, then assert locked UI.

@@ -197,7 +197,9 @@ export function FastMoneySubview() {
               step={FM_THRESHOLD_STEP}
               value={state.fastMoneyThreshold}
               onChange={e => {
-                const value = Number(e.target.value);
+                const raw = e.target.value;
+                if (raw === '') return;
+                const value = Number(raw);
                 if (Number.isFinite(value)) {
                   dispatch({ type: 'SET_FM_THRESHOLD', value });
                 }
