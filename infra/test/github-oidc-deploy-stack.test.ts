@@ -11,6 +11,8 @@ function synth() {
 describe('GithubOidcDeployStack', () => {
   it('creates the GitHub OIDC provider', () => {
     const t = synth();
+    // CDK synthesizes a Custom Resource for OpenIdConnectProvider; the native
+    // AWS::IAM::OIDCProvider CFN type is not yet used by the L2 construct.
     t.hasResourceProperties('Custom::AWSCDKOpenIdConnectProvider', {
       Url: 'https://token.actions.githubusercontent.com',
       ClientIDList: ['sts.amazonaws.com'],
