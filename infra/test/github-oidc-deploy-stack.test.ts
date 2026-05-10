@@ -64,7 +64,7 @@ describe('GithubOidcDeployStack', () => {
       PolicyDocument: {
         Statement: Match.arrayWith([
           Match.objectLike({
-            Action: Match.arrayWith(['s3:GetObject', 's3:PutObject', 's3:DeleteObject']),
+            Action: Match.arrayWith(['s3:ListBucket', 's3:GetObject', 's3:PutObject', 's3:DeleteObject']),
             Resource: Match.arrayWith([
               'arn:aws:s3:::*familyfeudstack*',
               'arn:aws:s3:::*familyfeudstack*/*',
