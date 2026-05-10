@@ -1,7 +1,7 @@
 import type { TournamentState, Action, Match, QuestionPlay, FaceOff, MatchPath } from './types';
 import { getCurrentMatch, pickRandom, computeWildcard, nextMatchPath } from './bracketLogic';
 import { QUESTIONS } from '../content/questions';
-import { FAST_MONEY_QUESTION_IDS, FM_THRESHOLD_MIN, FM_THRESHOLD_MAX } from '../content/fastMoneyConfig';
+import { FAST_MONEY_QUESTION_IDS, FM_THRESHOLD_MIN, FM_THRESHOLD_MAX, FM_THRESHOLD_DEFAULT } from '../content/fastMoneyConfig';
 import { initialState } from './initialState';
 
 function emptyMatch(teamAId: string, teamBId: string | null): Match {
@@ -106,8 +106,13 @@ function migrateHydratedState(s: TournamentState): TournamentState {
     q.faceOff ? q : { ...q, faceOff: emptyFaceOff() };
   const migrateMatch = (m: Match): Match =>
     m.questions.length === 0 ? m : { ...m, questions: m.questions.map(migrateQ) };
+  const threshold =
+    typeof s.fastMoneyThreshold === 'number' && Number.isFinite(s.fastMoneyThreshold)
+      ? s.fastMoneyThreshold
+      : FM_THRESHOLD_DEFAULT;
   return {
     ...s,
+    fastMoneyThreshold: threshold,
     bracket: {
       ...s.bracket,
       round1: s.bracket.round1.map(migrateMatch),

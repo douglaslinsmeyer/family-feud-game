@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import type { TournamentState } from '../../src/state/types';
 import { initialState } from '../../src/state/initialState';
 import { reducer } from '../../src/state/reducer';
 import { FAST_MONEY_QUESTION_IDS } from '../../src/content/fastMoneyConfig';
@@ -78,5 +79,22 @@ describe('reducer: COMPLETE_FAST_MONEY uses fastMoneyThreshold', () => {
     const next = reducer(s, { type: 'COMPLETE_FAST_MONEY' });
     expect(next.bracket.fastMoney!.totalScore).toBe(200);
     expect(next.bracket.fastMoney!.won).toBe(false);
+  });
+});
+
+describe('reducer: HYDRATE migration for fastMoneyThreshold', () => {
+  it('defaults to 200 when the field is missing from the snapshot', () => {
+    const fresh = initialState();
+    // Strip the field to simulate an old snapshot from before this feature.
+    const { fastMoneyThreshold: _omitted, ...rest } = fresh;
+    const oldSnapshot = rest as unknown as TournamentState;
+    const next = reducer(initialState(), { type: 'HYDRATE', state: oldSnapshot });
+    expect(next.fastMoneyThreshold).toBe(200);
+  });
+
+  it('preserves a valid threshold from the snapshot', () => {
+    const snap = { ...initialState(), fastMoneyThreshold: 175 };
+    const next = reducer(initialState(), { type: 'HYDRATE', state: snap });
+    expect(next.fastMoneyThreshold).toBe(175);
   });
 });
