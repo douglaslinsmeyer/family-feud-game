@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- this file probes
+   untyped YAML; precise types here would obscure the trust-model assertions. */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
