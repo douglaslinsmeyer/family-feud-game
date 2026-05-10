@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,10 +18,17 @@ function stepUses(steps: any[], substr: string): any | undefined {
 
 describe('workflow trust model', () => {
   describe('deploy.yml', () => {
-    const wf = loadWorkflow('deploy.yml');
-    const job = wf.jobs.deploy;
-    const steps = job.steps as any[];
-    const auth = stepUses(steps, 'aws-actions/configure-aws-credentials');
+    let wf: any;
+    let job: any;
+    let steps: any[];
+    let auth: any;
+
+    beforeAll(() => {
+      wf = loadWorkflow('deploy.yml');
+      job = wf.jobs.deploy;
+      steps = job.steps as any[];
+      auth = stepUses(steps, 'aws-actions/configure-aws-credentials');
+    });
 
     it('triggers only on push to main and workflow_dispatch', () => {
       expect(wf.on.push.branches).toEqual(['main']);
@@ -54,10 +61,17 @@ describe('workflow trust model', () => {
   });
 
   describe('ci.yml', () => {
-    const wf = loadWorkflow('ci.yml');
-    const job = wf.jobs.checks;
-    const steps = job.steps as any[];
-    const auth = stepUses(steps, 'aws-actions/configure-aws-credentials');
+    let wf: any;
+    let job: any;
+    let steps: any[];
+    let auth: any;
+
+    beforeAll(() => {
+      wf = loadWorkflow('ci.yml');
+      job = wf.jobs.checks;
+      steps = job.steps as any[];
+      auth = stepUses(steps, 'aws-actions/configure-aws-credentials');
+    });
 
     it('triggers only on pull_request to main', () => {
       expect(wf.on.pull_request.branches).toEqual(['main']);
