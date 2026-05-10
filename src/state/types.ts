@@ -113,4 +113,5 @@ export type TournamentState = {
   actionStack: StackedAction[];
   updatedAt: number;
   matchStartSnapshot: TournamentState | null;
+  fastMoneyThreshold: number;
 };
