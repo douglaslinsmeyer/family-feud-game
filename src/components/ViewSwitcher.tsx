@@ -1,4 +1,4 @@
-import { Tv, Trophy } from 'lucide-react';
+import { Tv, Trophy, ExternalLink } from 'lucide-react';
 import { useGameState } from '../hooks/useGameState';
 
 export function ViewSwitcher() {
@@ -20,6 +20,13 @@ export function ViewSwitcher() {
         onClick={() => dispatch({ type: 'SET_PROJECTOR_VIEW', view: 'bracket' })}
       >
         <Trophy size={16} />
+      </button>
+      <button
+        className="adm-glyph"
+        title="Open projector window"
+        onClick={() => window.open('/projector', '_blank', 'noopener,noreferrer')}
+      >
+        <ExternalLink size={16} />
       </button>
     </div>
   );
