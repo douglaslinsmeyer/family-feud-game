@@ -86,9 +86,9 @@ describe('reducer: HYDRATE migration for fastMoneyThreshold', () => {
   it('defaults to 200 when the field is missing from the snapshot', () => {
     const fresh = initialState();
     // Strip the field to simulate an old snapshot from before this feature.
-    const { fastMoneyThreshold: _omitted, ...rest } = fresh;
-    const oldSnapshot = rest as unknown as TournamentState;
-    const next = reducer(initialState(), { type: 'HYDRATE', state: oldSnapshot });
+    const oldSnapshot: Partial<TournamentState> = { ...fresh };
+    delete (oldSnapshot as { fastMoneyThreshold?: number }).fastMoneyThreshold;
+    const next = reducer(initialState(), { type: 'HYDRATE', state: oldSnapshot as TournamentState });
     expect(next.fastMoneyThreshold).toBe(200);
   });
 

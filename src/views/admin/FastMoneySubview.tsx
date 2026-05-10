@@ -187,30 +187,24 @@ export function FastMoneySubview() {
           Stop
         </button>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-          {thresholdLocked ? (
-            <span style={{ color: 'var(--gold-dim, #888)' }}>
-              Win at: {state.fastMoneyThreshold} <em>(locked)</em>
-            </span>
-          ) : (
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span>Win at:</span>
-              <input
-                type="number"
-                aria-label="Win at"
-                min={FM_THRESHOLD_MIN}
-                max={FM_THRESHOLD_MAX}
-                step={FM_THRESHOLD_STEP}
-                value={state.fastMoneyThreshold}
-                onChange={e => {
-                  const value = Number(e.target.value);
-                  if (Number.isFinite(value)) {
-                    dispatch({ type: 'SET_FM_THRESHOLD', value });
-                  }
-                }}
-                style={{ width: 70, padding: '4px 6px', fontSize: '1em' }}
-              />
-            </label>
-          )}
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>Win at:</span>
+            <input
+              type="number"
+              aria-label="Win at"
+              min={FM_THRESHOLD_MIN}
+              max={FM_THRESHOLD_MAX}
+              step={FM_THRESHOLD_STEP}
+              value={state.fastMoneyThreshold}
+              onChange={e => {
+                const value = Number(e.target.value);
+                if (Number.isFinite(value)) {
+                  dispatch({ type: 'SET_FM_THRESHOLD', value });
+                }
+              }}
+              style={{ width: 70, padding: '4px 6px', fontSize: '1em' }}
+            />
+          </label>
         </div>
       </div>
 
