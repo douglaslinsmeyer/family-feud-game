@@ -88,4 +88,43 @@ describe('GithubOidcDeployStack', () => {
       },
     });
   });
+
+  it('creates family-feud-ci-readonly role trusting any branch in the repo', () => {
+    const t = synth();
+    t.hasResourceProperties('AWS::IAM::Role', {
+      RoleName: 'family-feud-ci-readonly',
+      AssumeRolePolicyDocument: {
+        Statement: [
+          {
+            Action: 'sts:AssumeRoleWithWebIdentity',
+            Effect: 'Allow',
+            Condition: {
+              StringEquals: {
+                'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
+              },
+              StringLike: {
+                'token.actions.githubusercontent.com:sub':
+                  'repo:douglaslinsmeyer/family-feud-game:*',
+              },
+            },
+          },
+        ],
+      },
+    });
+  });
+
+  it('grants CI role only sts:AssumeRole on cdk-*-lookup-role-*', () => {
+    const t = synth();
+    t.hasResourceProperties('AWS::IAM::Policy', {
+      PolicyDocument: {
+        Statement: [
+          Match.objectLike({
+            Action: 'sts:AssumeRole',
+            Resource: { 'Fn::Join': ['', Match.arrayWith([':role/cdk-*-lookup-role-*'])] },
+          }),
+        ],
+      },
+      Roles: Match.arrayWith([{ Ref: Match.stringLikeRegexp('^CiReadonlyRole') }]),
+    });
+  });
 });

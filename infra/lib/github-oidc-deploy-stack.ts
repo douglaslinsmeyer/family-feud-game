@@ -1,4 +1,4 @@
-import { Stack, StackProps } from 'aws-cdk-lib';
+import { Stack, StackProps, CfnOutput } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as iam from 'aws-cdk-lib/aws-iam';
 
@@ -33,5 +33,20 @@ export class GithubOidcDeployStack extends Stack {
       actions: ['cloudfront:CreateInvalidation'],
       resources: ['*'],
     }));
+
+    const ciRole = new iam.Role(this, 'CiReadonlyRole', {
+      roleName: 'family-feud-ci-readonly',
+      assumedBy: new iam.OpenIdConnectPrincipal(provider, {
+        StringEquals: { 'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com' },
+        StringLike: { 'token.actions.githubusercontent.com:sub': `repo:${REPO}:*` },
+      }),
+    });
+    ciRole.addToPolicy(new iam.PolicyStatement({
+      actions: ['sts:AssumeRole'],
+      resources: [`arn:aws:iam::${this.account}:role/cdk-*-lookup-role-*`],
+    }));
+
+    new CfnOutput(this, 'DeployRoleArn', { value: deployRole.roleArn });
+    new CfnOutput(this, 'CiRoleArn', { value: ciRole.roleArn });
   }
 }
