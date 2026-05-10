@@ -8,10 +8,13 @@ export class GithubOidcDeployStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    const provider = new iam.OpenIdConnectProvider(this, 'GithubOidc', {
-      url: 'https://token.actions.githubusercontent.com',
-      clientIds: ['sts.amazonaws.com'],
-    });
+    // Import the existing account-wide GitHub OIDC provider rather than creating
+    // a new one — IAM allows only a single provider per issuer URL per account.
+    const provider = iam.OpenIdConnectProvider.fromOpenIdConnectProviderArn(
+      this,
+      'GithubOidc',
+      `arn:aws:iam::${this.account}:oidc-provider/token.actions.githubusercontent.com`,
+    );
 
     const deployRole = new iam.Role(this, 'DeployRole', {
       roleName: 'family-feud-deploy',

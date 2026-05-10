@@ -9,13 +9,27 @@ function synth() {
 }
 
 describe('GithubOidcDeployStack', () => {
-  it('creates the GitHub OIDC provider', () => {
+  it('imports the existing account-wide GitHub OIDC provider', () => {
     const t = synth();
-    // CDK synthesizes a Custom Resource for OpenIdConnectProvider; the native
-    // AWS::IAM::OIDCProvider CFN type is not yet used by the L2 construct.
-    t.hasResourceProperties('Custom::AWSCDKOpenIdConnectProvider', {
-      Url: 'https://token.actions.githubusercontent.com',
-      ClientIDList: ['sts.amazonaws.com'],
+    // We import the OIDC provider rather than creating it (IAM allows only one
+    // per issuer URL per account). Verify by asserting the deploy role's trust
+    // policy federates to the canonical provider ARN.
+    t.hasResourceProperties('AWS::IAM::Role', {
+      RoleName: 'family-feud-deploy',
+      AssumeRolePolicyDocument: {
+        Statement: [
+          Match.objectLike({
+            Principal: {
+              Federated: {
+                'Fn::Join': [
+                  '',
+                  Match.arrayWith([':oidc-provider/token.actions.githubusercontent.com']),
+                ],
+              },
+            },
+          }),
+        ],
+      },
     });
   });
 
