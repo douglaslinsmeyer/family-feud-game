@@ -17,3 +17,9 @@ for (const id of FAST_MONEY_QUESTION_IDS) {
     throw new Error(`FAST_MONEY config references missing question: ${id}`);
   }
 }
+
+// Fast Money victory threshold bounds (host-configurable at runtime).
+export const FM_THRESHOLD_DEFAULT = 200;
+export const FM_THRESHOLD_MIN = 50;
+export const FM_THRESHOLD_MAX = 400;
+export const FM_THRESHOLD_STEP = 5;
