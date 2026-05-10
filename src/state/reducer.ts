@@ -567,7 +567,7 @@ export function reducer(state: TournamentState, action: Action): TournamentState
       if (!fm) return state;
       const totalScore =
         [...fm.player1, ...fm.player2].reduce((sum, a) => sum + a.points, 0);
-      const updated = { ...fm, totalScore, won: totalScore >= 200 };
+      const updated = { ...fm, totalScore, won: totalScore >= state.fastMoneyThreshold };
       return {
         ...state,
         bracket: { ...state.bracket, fastMoney: updated },

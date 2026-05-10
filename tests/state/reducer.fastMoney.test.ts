@@ -47,3 +47,36 @@ describe('reducer: SET_FM_THRESHOLD', () => {
     expect(next.fastMoneyThreshold).toBe(200);  // unchanged
   });
 });
+
+describe('reducer: COMPLETE_FAST_MONEY uses fastMoneyThreshold', () => {
+  function fmStateWithScores(p1Pts: number[], p2Pts: number[], threshold: number) {
+    const s = initialState();
+    return {
+      ...s,
+      fastMoneyThreshold: threshold,
+      bracket: {
+        ...s.bracket,
+        fastMoney: {
+          player1: p1Pts.map(p => ({ text: 'x', points: p })),
+          player2: p2Pts.map(p => ({ text: 'x', points: p })),
+          totalScore: 0,
+          won: false,
+        },
+      },
+    };
+  }
+
+  it('won is true when total >= threshold (threshold 150, score 160)', () => {
+    const s = fmStateWithScores([10, 20, 30, 20, 10], [10, 20, 30, 20, 10], 150);
+    const next = reducer(s, { type: 'COMPLETE_FAST_MONEY' });
+    expect(next.bracket.fastMoney!.totalScore).toBe(180);
+    expect(next.bracket.fastMoney!.won).toBe(true);
+  });
+
+  it('won is false when total < threshold (threshold 250, score 200)', () => {
+    const s = fmStateWithScores([20, 20, 20, 20, 20], [20, 20, 20, 20, 20], 250);
+    const next = reducer(s, { type: 'COMPLETE_FAST_MONEY' });
+    expect(next.bracket.fastMoney!.totalScore).toBe(200);
+    expect(next.bracket.fastMoney!.won).toBe(false);
+  });
+});
