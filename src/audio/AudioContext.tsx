@@ -10,8 +10,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       const a = new Audio(path);
       a.volume = 0.7;
       cache.current[k] = a;
-      // Touch each clip to satisfy browser autoplay policy; ignore errors
-      // (placeholder 0-byte files will 404 or fail silently)
+      // Touch each clip to satisfy browser autoplay policy; ignore errors.
       a.play().then(() => a.pause()).catch(() => {});
     });
     setUnlocked(true);
@@ -22,7 +21,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     const a = cache.current[name];
     if (!a) return;
     a.currentTime = 0;
-    // Fail gracefully — placeholder files may 404 or be empty
     a.play().catch(() => {});
   }, [unlocked]);
 
