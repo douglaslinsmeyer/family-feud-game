@@ -1,6 +1,7 @@
 import type { TournamentState, Action, Match, QuestionPlay, FaceOff, MatchPath } from './types';
 import { getCurrentMatch, pickRandom, computeWildcard, nextMatchPath } from './bracketLogic';
 import { QUESTIONS } from '../content/questions';
+import { FAST_MONEY_QUESTION_IDS, FM_THRESHOLD_MIN, FM_THRESHOLD_MAX } from '../content/fastMoneyConfig';
 import { initialState } from './initialState';
 
 function emptyMatch(teamAId: string, teamBId: string | null): Match {
@@ -572,6 +573,18 @@ export function reducer(state: TournamentState, action: Action): TournamentState
         bracket: { ...state.bracket, fastMoney: updated },
         updatedAt: Date.now(),
       };
+    }
+
+    case 'SET_FM_THRESHOLD': {
+      const fm = state.bracket.fastMoney;
+      const completed =
+        fm !== null && fm.player2.length === FAST_MONEY_QUESTION_IDS.length;
+      if (completed) return state;
+      const clamped = Math.max(
+        FM_THRESHOLD_MIN,
+        Math.min(FM_THRESHOLD_MAX, action.value),
+      );
+      return { ...state, fastMoneyThreshold: clamped, updatedAt: Date.now() };
     }
 
     case 'HYDRATE':
