@@ -1,5 +1,5 @@
 import { App } from 'aws-cdk-lib';
-import { Template } from 'aws-cdk-lib/assertions';
+import { Match, Template } from 'aws-cdk-lib/assertions';
 import { GithubOidcDeployStack } from '../lib/github-oidc-deploy-stack';
 
 function synth() {
@@ -39,6 +39,52 @@ describe('GithubOidcDeployStack', () => {
             },
           },
         ],
+      },
+    });
+  });
+
+  it('grants deploy role sts:AssumeRole on cdk-* roles', () => {
+    const t = synth();
+    t.hasResourceProperties('AWS::IAM::Policy', {
+      PolicyDocument: {
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Action: 'sts:AssumeRole',
+            Resource: { 'Fn::Join': ['', Match.arrayWith([':role/cdk-*'])] },
+          }),
+        ]),
+      },
+      Roles: Match.arrayWith([{ Ref: Match.stringLikeRegexp('^DeployRole') }]),
+    });
+  });
+
+  it('grants deploy role S3 read/write on site-bucket pattern', () => {
+    const t = synth();
+    t.hasResourceProperties('AWS::IAM::Policy', {
+      PolicyDocument: {
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Action: Match.arrayWith(['s3:GetObject', 's3:PutObject', 's3:DeleteObject']),
+            Resource: Match.arrayWith([
+              'arn:aws:s3:::*familyfeudstack*',
+              'arn:aws:s3:::*familyfeudstack*/*',
+            ]),
+          }),
+        ]),
+      },
+    });
+  });
+
+  it('grants deploy role cloudfront:CreateInvalidation', () => {
+    const t = synth();
+    t.hasResourceProperties('AWS::IAM::Policy', {
+      PolicyDocument: {
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Action: 'cloudfront:CreateInvalidation',
+            Resource: '*',
+          }),
+        ]),
       },
     });
   });
