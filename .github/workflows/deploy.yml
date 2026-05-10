@@ -1,0 +1,51 @@
+name: deploy
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '25'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc -b
+      - run: npm run test:run
+      - working-directory: infra
+        run: npm ci && npx jest && npx cdk synth
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::951395862865:role/family-feud-deploy
+          aws-region: us-east-2
+
+      - working-directory: infra
+        run: npx cdk deploy FamilyFeudStack --require-approval never --outputs-file cdk-outputs.json
+      - id: outputs
+        run: |
+          echo "bucket=$(jq -r .FamilyFeudStack.SiteBucketName infra/cdk-outputs.json)" >> $GITHUB_OUTPUT
+          echo "dist=$(jq -r .FamilyFeudStack.DistributionId   infra/cdk-outputs.json)" >> $GITHUB_OUTPUT
+          echo "table=$(jq -r .FamilyFeudStack.TableName        infra/cdk-outputs.json)" >> $GITHUB_OUTPUT
+          echo "pool=$(jq -r .FamilyFeudStack.IdentityPoolId    infra/cdk-outputs.json)" >> $GITHUB_OUTPUT
+      - env:
+          VITE_PERSISTENCE: ddb
+          VITE_AWS_REGION: us-east-2
+          VITE_COGNITO_IDENTITY_POOL_ID: ${{ steps.outputs.outputs.pool }}
+          VITE_DDB_TABLE_NAME: ${{ steps.outputs.outputs.table }}
+        run: npm run build
+      - run: aws s3 sync dist/ s3://${{ steps.outputs.outputs.bucket }}/ --delete
+      - run: aws cloudfront create-invalidation --distribution-id ${{ steps.outputs.outputs.dist }} --paths '/*'

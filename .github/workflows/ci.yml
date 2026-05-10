@@ -1,0 +1,53 @@
+name: ci
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '25'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc -b
+      - run: npm run test:run
+      - working-directory: infra
+        run: npm ci && npx jest && npx cdk synth
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::951395862865:role/family-feud-ci-readonly
+          aws-region: us-east-2
+
+      - id: diff
+        working-directory: infra
+        run: |
+          npx cdk diff FamilyFeudStack 2>&1 | tee /tmp/cdk-diff.txt
+          {
+            echo 'body<<EOF'
+            echo '### `cdk diff` vs deployed prod stack'
+            echo ''
+            echo '```'
+            cat /tmp/cdk-diff.txt
+            echo '```'
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
+      - uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: cdk-diff
+          message: ${{ steps.diff.outputs.body }}
