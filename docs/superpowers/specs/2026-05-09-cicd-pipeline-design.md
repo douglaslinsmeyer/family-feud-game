@@ -105,7 +105,7 @@ jobs:
 - Steps 1–5 (checkout through `cdk synth`) run before `configure-aws-credentials`. A failing test stops the run before any AWS-side change.
 - `concurrency: deploy-prod` with `cancel-in-progress: false` means rapid pushes queue rather than overlap. S3 sync + CloudFront invalidation are not atomic; overlapping deploys could leave the bucket in a mixed state.
 - `workflow_dispatch` lets you re-run the latest `main` from the Actions tab without forcing a no-op commit (useful day-of if a deploy was interrupted).
-- Node 25 mirrors the local `nvm` version. Can be pinned to 22 LTS instead with no functional change.
+- Node 25 mirrors the local `nvm` version, ensuring CI runs match developer-laptop behavior. Bumped together with the local `nvm` install whenever updated.
 
 ## Workflow: `ci.yml`
 
