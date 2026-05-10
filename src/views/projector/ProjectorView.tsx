@@ -1,5 +1,6 @@
 import { useTournamentPolling } from '../../hooks/useDDBPolling';
 import { useSfx } from '../../audio/useSfx';
+import { isFastMoneyPhase } from '../../state/selectors';
 import { GameModeView } from './GameModeView';
 import { BracketView } from './BracketView';
 import { FastMoneyView } from './FastMoneyView';
@@ -11,7 +12,7 @@ function ProjectorContent({ id }: { id: string }) {
   const state = useTournamentPolling(id);
   if (!state) return <div style={{ padding: 48 }}>Loading…</div>;
 
-  if (state.bracket.fastMoney !== null) {
+  if (isFastMoneyPhase(state)) {
     return <FastMoneyView state={state} />;
   }
 

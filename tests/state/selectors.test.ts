@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { teamById, currentQuestion, canAdvanceMatch, adminBodyKind } from '../../src/state/selectors';
+import { teamById, currentQuestion, canAdvanceMatch, adminBodyKind, isFastMoneyPhase } from '../../src/state/selectors';
 import { initialState } from '../../src/state/initialState';
 import { reducer } from '../../src/state/reducer';
 
@@ -128,5 +128,30 @@ describe('adminBodyKind', () => {
     s = reducer(s, { type: 'FACEOFF_FIRST_ANSWER', answerIndex: 0 });
     s = reducer(s, { type: 'FACEOFF_KEEP' });
     expect(adminBodyKind(s)).toBe('inMatch');
+  });
+});
+
+describe('isFastMoneyPhase', () => {
+  it('is false during setup', () => {
+    expect(isFastMoneyPhase(initialState())).toBe(false);
+  });
+
+  it('is false while a tournament is in progress', () => {
+    expect(isFastMoneyPhase(startedTournament())).toBe(false);
+  });
+
+  it('is true the moment status flips to "done", before any FM answers are logged', () => {
+    // Reproduces the projector vs. admin desync: status='done' but
+    // bracket.fastMoney is still null until the first SUBMIT_FM_ANSWER.
+    // Both views must agree at this instant.
+    const s = {
+      ...startedTournament(),
+      status: 'done' as const,
+      currentMatchPath: null,
+      currentMatchState: 'match_over' as const,
+    };
+    expect(s.bracket.fastMoney).toBeNull();
+    expect(isFastMoneyPhase(s)).toBe(true);
+    expect(adminBodyKind(s)).toBe('fastMoney');
   });
 });

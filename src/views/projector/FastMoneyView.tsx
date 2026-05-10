@@ -37,8 +37,22 @@ interface Props {
  * In "reveal" phase (after COMPLETE_FAST_MONEY), the score counts up from 0.
  */
 export function FastMoneyView({ state }: Props) {
-  const fm = state.bracket.fastMoney!;
+  const fm = state.bracket.fastMoney;
   const { play } = useSfx();
+
+  // Hooks must run unconditionally; null-fm path renders the intro placeholder
+  // below, but the won-flip effect is set up regardless so it fires correctly
+  // once data arrives without remounting.
+  const won = fm?.won ?? false;
+  const prevWon = useRef(won);
+  useEffect(() => {
+    if (won && !prevWon.current) {
+      play('champion');
+    }
+    prevWon.current = won;
+  }, [won, play]);
+
+  if (!fm) return <FastMoneyIntro />;
 
   // Phase detection:
   // - player1: fm.player2 is empty
@@ -50,15 +64,6 @@ export function FastMoneyView({ state }: Props) {
 
   const runningTotal = fm.player1.reduce((s, a) => s + a.points, 0)
                      + fm.player2.reduce((s, a) => s + a.points, 0);
-
-  // Play champion fanfare once when fm.won flips to true
-  const prevWon = useRef(fm.won);
-  useEffect(() => {
-    if (fm.won && !prevWon.current) {
-      play('champion');
-    }
-    prevWon.current = fm.won;
-  }, [fm.won, play]);
 
   return (
     <div
@@ -153,6 +158,46 @@ export function FastMoneyView({ state }: Props) {
           Player 1 scored: {fm.player1.reduce((s, a) => s + a.points, 0)} pts
         </div>
       )}
+    </div>
+  );
+}
+
+function FastMoneyIntro() {
+  return (
+    <div
+      style={{
+        height: '100vh',
+        background: 'linear-gradient(180deg, #0a1d4f 0%, #061236 100%)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 32,
+        gap: 24,
+      }}
+    >
+      <h1
+        style={{
+          fontFamily: 'Bebas Neue, sans-serif',
+          fontSize: 'clamp(48px, 8vw, 96px)',
+          color: 'var(--gold)',
+          textShadow: '0 0 32px var(--gold)',
+          margin: 0,
+          letterSpacing: 4,
+        }}
+      >
+        FAST MONEY
+      </h1>
+      <div
+        style={{
+          fontFamily: 'Bebas Neue, sans-serif',
+          fontSize: 'clamp(32px, 4vw, 56px)',
+          color: 'rgba(255, 255, 255, 0.7)',
+          letterSpacing: 3,
+        }}
+      >
+        GET READY…
+      </div>
     </div>
   );
 }

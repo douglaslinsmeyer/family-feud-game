@@ -33,9 +33,13 @@ export function matchOverWinningTeamId(state: TournamentState): string | null {
 
 export type AdminBodyKind = 'setup' | 'fastMoney' | 'faceOff' | 'steal' | 'between' | 'inMatch';
 
+export function isFastMoneyPhase(state: TournamentState): boolean {
+  return state.status === 'done';
+}
+
 export function adminBodyKind(state: TournamentState): AdminBodyKind {
   if (state.status === 'setup') return 'setup';
-  if (state.status === 'done') return 'fastMoney';
+  if (isFastMoneyPhase(state)) return 'fastMoney';
   if (state.currentMatchState === 'face_off') return 'faceOff';
   if (state.currentMatchState === 'steal') return 'steal';
   if (state.currentMatchState === 'awarded') return 'between';
