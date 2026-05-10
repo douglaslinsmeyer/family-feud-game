@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { teamById, currentQuestion, canAdvanceMatch, adminBodyKind, isFastMoneyPhase } from '../../src/state/selectors';
+import { teamById, currentQuestion, canAdvanceMatch, adminBodyKind, isFastMoneyPhase, isFastMoneyCompleted } from '../../src/state/selectors';
 import { initialState } from '../../src/state/initialState';
 import { reducer } from '../../src/state/reducer';
+import { FAST_MONEY_QUESTION_IDS } from '../../src/content/fastMoneyConfig';
 
 const sixTeams = ['a','b','c','d','e','f'].map(c => ({ id: c, name: c.toUpperCase(), members: [] }));
 
@@ -153,5 +154,46 @@ describe('isFastMoneyPhase', () => {
     expect(s.bracket.fastMoney).toBeNull();
     expect(isFastMoneyPhase(s)).toBe(true);
     expect(adminBodyKind(s)).toBe('fastMoney');
+  });
+});
+
+describe('isFastMoneyCompleted', () => {
+  it('returns false when fastMoney is null', () => {
+    const s = initialState();
+    expect(isFastMoneyCompleted(s)).toBe(false);
+  });
+
+  it('returns false when player2 has fewer than all answers', () => {
+    const base = initialState();
+    const s = {
+      ...base,
+      bracket: {
+        ...base.bracket,
+        fastMoney: {
+          player1: FAST_MONEY_QUESTION_IDS.map(() => ({ text: 'x', points: 0 })),
+          player2: [{ text: 'x', points: 0 }],
+          totalScore: 0,
+          won: false,
+        },
+      },
+    };
+    expect(isFastMoneyCompleted(s)).toBe(false);
+  });
+
+  it('returns true when player2 has all answers', () => {
+    const base = initialState();
+    const s = {
+      ...base,
+      bracket: {
+        ...base.bracket,
+        fastMoney: {
+          player1: FAST_MONEY_QUESTION_IDS.map(() => ({ text: 'x', points: 0 })),
+          player2: FAST_MONEY_QUESTION_IDS.map(() => ({ text: 'x', points: 0 })),
+          totalScore: 0,
+          won: false,
+        },
+      },
+    };
+    expect(isFastMoneyCompleted(s)).toBe(true);
   });
 });

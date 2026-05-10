@@ -1,5 +1,6 @@
 import type { TournamentState, Team, QuestionPlay } from './types';
 import { QUESTIONS, type Question } from '../content/questions';
+import { FAST_MONEY_QUESTION_IDS } from '../content/fastMoneyConfig';
 import { getCurrentMatch } from './bracketLogic';
 
 export function teamById(state: TournamentState, id: string | null | undefined): Team | undefined {
@@ -64,4 +65,9 @@ export function faceOffStage(state: TournamentState): FaceOffStage {
   if (!fo.firstAnswerSubmitted) return 'awaiting_first_answer';
   if (!fo.secondAnswerSubmitted) return 'awaiting_second_answer';
   return 'awaiting_adjudication';
+}
+
+export function isFastMoneyCompleted(state: TournamentState): boolean {
+  const fm = state.bracket.fastMoney;
+  return fm !== null && fm.player2.length === FAST_MONEY_QUESTION_IDS.length;
 }
