@@ -142,7 +142,7 @@ export function FastMoneyView({ state }: Props) {
             textShadow: fm.won ? '0 0 20px var(--gold)' : 'none',
           }}
         >
-          {fm.won ? '★ YOU WIN! ★' : 'NOT ENOUGH — NEED 200'}
+          {fm.won ? '★ YOU WIN! ★' : `NOT ENOUGH — NEED ${state.fastMoneyThreshold}`}
         </motion.div>
       )}
 

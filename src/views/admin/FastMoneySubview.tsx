@@ -1,7 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useGameState } from '../../hooks/useGameState';
 import { QUESTIONS } from '../../content/questions';
-import { FAST_MONEY_QUESTION_IDS } from '../../content/fastMoneyConfig';
+import {
+  FAST_MONEY_QUESTION_IDS,
+  FM_THRESHOLD_MIN,
+  FM_THRESHOLD_MAX,
+  FM_THRESHOLD_STEP,
+} from '../../content/fastMoneyConfig';
+import { isFastMoneyCompleted } from '../../state/selectors';
 import { useSfx } from '../../audio/useSfx';
 import type { FastMoneyAnswer } from '../../state/types';
 
@@ -16,6 +22,7 @@ export function FastMoneySubview() {
   const { state, dispatch } = useGameState();
   const { play } = useSfx();
   const fm = state.bracket.fastMoney;
+  const thresholdLocked = isFastMoneyCompleted(state);
 
   const [phase, setPhase] = useState<Phase>('player1');
   const [answers, setAnswers] = useState<string[]>(Array(NUM_QUESTIONS).fill(''));
@@ -85,7 +92,7 @@ export function FastMoneySubview() {
   }
 
   // Reveal phase
-  if (phase === 'reveal') {
+  if (phase === 'reveal' || thresholdLocked) {
     const finalFm = state.bracket.fastMoney;
     if (!finalFm) {
       return <div>Fast Money complete — no data to show.</div>;
@@ -96,7 +103,12 @@ export function FastMoneySubview() {
     );
     return (
       <div style={{ maxWidth: 700, margin: '0 auto', padding: 16 }}>
-        <h2 style={{ marginBottom: 16 }}>Fast Money — Final Results</h2>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+          <h2 style={{ margin: 0 }}>Fast Money — Final Results</h2>
+          <span style={{ marginLeft: 'auto', color: 'var(--gold-dim, #888)' }}>
+            Win at: {state.fastMoneyThreshold} <em>(locked)</em>
+          </span>
+        </div>
         <div
           style={{
             fontSize: '2em',
@@ -106,7 +118,7 @@ export function FastMoneySubview() {
             textAlign: 'center',
           }}
         >
-          {total} points — {finalFm.won ? 'YOU WIN!' : 'Not enough (need 200)'}
+          {total} points — {finalFm.won ? 'YOU WIN!' : `Not enough (need ${state.fastMoneyThreshold})`}
         </div>
         <div style={{ display: 'flex', gap: 24 }}>
           <div style={{ flex: 1 }}>
@@ -174,6 +186,28 @@ export function FastMoneySubview() {
         <button onClick={stopTimer} disabled={!timerRunning} style={{ padding: '4px 12px' }}>
           Stop
         </button>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>Win at:</span>
+            <input
+              type="number"
+              aria-label="Win at"
+              min={FM_THRESHOLD_MIN}
+              max={FM_THRESHOLD_MAX}
+              step={FM_THRESHOLD_STEP}
+              value={state.fastMoneyThreshold}
+              onChange={e => {
+                const raw = e.target.value;
+                if (raw === '') return;
+                const value = Number(raw);
+                if (Number.isFinite(value)) {
+                  dispatch({ type: 'SET_FM_THRESHOLD', value });
+                }
+              }}
+              style={{ width: 70, padding: '4px 6px', fontSize: '1em' }}
+            />
+          </label>
+        </div>
       </div>
 
       {/* Note: Player 2 answers are entered after Player 1 is hidden from the projector */}

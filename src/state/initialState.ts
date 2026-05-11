@@ -1,6 +1,6 @@
 import type { TournamentState } from './types';
 import { QUESTIONS } from '../content/questions';
-import { FAST_MONEY_QUESTION_IDS } from '../content/fastMoneyConfig';
+import { FAST_MONEY_QUESTION_IDS, FM_THRESHOLD_DEFAULT } from '../content/fastMoneyConfig';
 
 export function initialState(): TournamentState {
   const allIds = QUESTIONS.map(q => q.id);
@@ -28,5 +28,6 @@ export function initialState(): TournamentState {
     actionStack: [],
     updatedAt: Date.now(),
     matchStartSnapshot: null,
+    fastMoneyThreshold: FM_THRESHOLD_DEFAULT,
   };
 }

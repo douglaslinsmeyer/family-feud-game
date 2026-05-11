@@ -1,6 +1,7 @@
 import type { TournamentState, Action, Match, QuestionPlay, FaceOff, MatchPath } from './types';
 import { getCurrentMatch, pickRandom, computeWildcard, nextMatchPath } from './bracketLogic';
 import { QUESTIONS } from '../content/questions';
+import { FAST_MONEY_QUESTION_IDS, FM_THRESHOLD_MIN, FM_THRESHOLD_MAX, FM_THRESHOLD_DEFAULT } from '../content/fastMoneyConfig';
 import { initialState } from './initialState';
 
 function emptyMatch(teamAId: string, teamBId: string | null): Match {
@@ -105,8 +106,13 @@ function migrateHydratedState(s: TournamentState): TournamentState {
     q.faceOff ? q : { ...q, faceOff: emptyFaceOff() };
   const migrateMatch = (m: Match): Match =>
     m.questions.length === 0 ? m : { ...m, questions: m.questions.map(migrateQ) };
+  const threshold =
+    typeof s.fastMoneyThreshold === 'number' && Number.isFinite(s.fastMoneyThreshold)
+      ? s.fastMoneyThreshold
+      : FM_THRESHOLD_DEFAULT;
   return {
     ...s,
+    fastMoneyThreshold: threshold,
     bracket: {
       ...s.bracket,
       round1: s.bracket.round1.map(migrateMatch),
@@ -566,12 +572,24 @@ export function reducer(state: TournamentState, action: Action): TournamentState
       if (!fm) return state;
       const totalScore =
         [...fm.player1, ...fm.player2].reduce((sum, a) => sum + a.points, 0);
-      const updated = { ...fm, totalScore, won: totalScore >= 200 };
+      const updated = { ...fm, totalScore, won: totalScore >= state.fastMoneyThreshold };
       return {
         ...state,
         bracket: { ...state.bracket, fastMoney: updated },
         updatedAt: Date.now(),
       };
+    }
+
+    case 'SET_FM_THRESHOLD': {
+      const fm = state.bracket.fastMoney;
+      const completed =
+        fm !== null && fm.player2.length === FAST_MONEY_QUESTION_IDS.length;
+      if (completed) return state;
+      const clamped = Math.max(
+        FM_THRESHOLD_MIN,
+        Math.min(FM_THRESHOLD_MAX, action.value),
+      );
+      return { ...state, fastMoneyThreshold: clamped, updatedAt: Date.now() };
     }
 
     case 'HYDRATE':
